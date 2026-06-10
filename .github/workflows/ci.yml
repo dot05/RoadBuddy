@@ -8,6 +8,9 @@ on:
 jobs:
   backend-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
     steps:
       - uses: actions/checkout@v4
 
@@ -19,18 +22,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          if [ -f backend/requirements.txt ]; then
-            pip install -r backend/requirements.txt
-          else
-            echo "No requirements.txt yet, skipping"
-          fi
+          pip install -r requirements.txt
 
       - name: Run tests
-        env:
-          PYTHONPATH: backend
         run: |
-          if [ -d backend/tests ]; then
-            pytest backend/tests/ -v
+          if [ -d tests ]; then
+            pytest tests/ -v
           else
             echo "No tests folder yet, skipping"
           fi
