@@ -3,7 +3,6 @@ name: Roadbuddy CI
 on:
   push:
     branches:
-      - develop
       - main
 
 jobs:
@@ -27,8 +26,6 @@ jobs:
 
       - name: Run tests
         run: |
-          if [ -d tests ] && [ "$(ls -A tests/)" ]; then
-            pytest tests/ -v
-          else
-            echo "No tests yet, skipping"
-          fi
+          env:
+          PYTHONPATH: .
+        run: pytest tests/ -v
