@@ -23,6 +23,16 @@ class GroupType(str, Enum):
     family = "family"
     friends = "friends"
 
+class TravelMode(str, Enum):
+    own_vehicle = "own_vehicle"
+    bus         = "bus"
+    train       = "train"
+    flight      = "flight"
+
+class TransportMode(str, Enum):
+    bus    = "bus"
+    train  = "train"
+    flight = "flight"
 
 # ─── User / Auth ──────────────────────────────────────────────────────────────
 
@@ -66,12 +76,13 @@ class VehicleOut(VehicleCreate):
 # ─── Trip Planner ─────────────────────────────────────────────────────────────
 
 class TripCreate(BaseModel):
-    origin: str                            # e.g. "Jaipur, Rajasthan"
-    destination: str                       # e.g. "Udaipur, Rajasthan"
-    start_date: str                        # "2025-12-01"
-    end_date: str                          # "2025-12-03"
+    origin: str
+    destination: str
+    start_date: str
+    end_date: str
     budget_inr: float
-    vehicle_id: str
+    travel_mode: TravelMode        # own_vehicle / bus / train / flight
+    vehicle_id: Optional[str] = None   # only needed for own_vehicle
     group_type: GroupType
     num_people: int = 1
 
@@ -89,11 +100,18 @@ class TripOut(BaseModel):
     id: str
     origin: str
     destination: str
+    travel_mode: TravelMode
     total_distance_km: float
     stops: List[ItineraryStop]
+    # cost breakdown
+    fuel_cost_inr: float = 0
+    toll_cost_inr: float = 0
+    transport_fare_inr: float = 0
+    return_fare_inr: float = 0
+    hotel_cost_inr: float = 0
+    food_cost_inr: float = 0
     total_estimated_cost_inr: float
     ai_summary: str
-
 
 # ─── Fuel & Toll ──────────────────────────────────────────────────────────────
 
@@ -158,3 +176,44 @@ class JournalOut(BaseModel):
     entries: list
     total_expense_inr: float
     is_public: bool
+
+# ─── Transport ────────────────────────────────────────────────────────────────
+
+class TransportSearch(BaseModel):
+    origin: str
+    destination: str
+    mode: TransportMode            # bus / train / flight
+    travel_date: str               # "2025-12-01"
+
+class TransportOption(BaseModel):
+    id: str
+    origin: str
+    destination: str
+    mode: TransportMode
+    operator: str                  # "RSRTC" / "Rajdhani Express" / "IndiGo"
+    departure_time: str            # "06:00 AM"
+    arrival_time: str              # "02:00 PM"
+    duration_hrs: float
+    fare_inr: float
+    seats_available: int
+
+class TransportBooking(BaseModel):
+    transport_option_id: str
+    passenger_name: str
+    travel_date: str
+    include_return: bool = False
+    return_date: Optional[str] = None
+
+class BookingOut(BaseModel):
+    id: str
+    user_id: str
+    transport_option_id: str
+    passenger_name: str
+    travel_date: str
+    include_return: bool
+    return_date: Optional[str]
+    going_fare_inr: float
+    return_fare_inr: float = 0
+    total_fare_inr: float
+    status: str                    # "confirmed" / "cancelled"
+    created_at: str
