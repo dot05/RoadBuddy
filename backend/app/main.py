@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import trips, fuel, users, community, journal
+from app.routers import trips, fuel, users, community, journal, transport
 
 app = FastAPI(
     title="RoadBuddy AI",
@@ -24,6 +24,7 @@ app.include_router(trips.router,     prefix="/api/trips",     tags=["AI Trip Pla
 app.include_router(fuel.router,      prefix="/api/fuel",      tags=["Fuel & Toll"])
 app.include_router(community.router, prefix="/api/community", tags=["Community Routes"])
 app.include_router(journal.router,   prefix="/api/journal",   tags=["Trip Journal"])
+app.include_router(transport.router, prefix="/api/transport", tags=["Transport"])
 
 
 @app.get("/", tags=["Health"])
