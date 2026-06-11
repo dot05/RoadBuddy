@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+import traceback
 
 from app.routers import trips, fuel, users, community, journal, transport
 
@@ -12,11 +14,22 @@ app = FastAPI(
 # Allow frontend/mobile apps to call this API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Change to your frontend URL in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Global error handler — shows real error instead of "Internal Server Error"
+@app.exception_handler(Exception)
+async def global_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": str(exc),
+            "traceback": traceback.format_exc()
+        }
+    )
 
 # Register all route groups
 app.include_router(users.router,     prefix="/api/users",     tags=["Users & Auth"])

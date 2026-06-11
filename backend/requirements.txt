@@ -8,3 +8,5 @@ passlib[bcrypt]
 httpx
 python-multipart
 pytest
+sqlalchemy
+psycopg2-binary
