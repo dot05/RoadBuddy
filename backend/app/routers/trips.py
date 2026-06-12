@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+from app.services.trip_chatbot import chat_with_roadbuddy
 from typing import Optional
 from sqlalchemy.orm import Session
 from app.services.waypoint_suggester import suggest_waypoints
@@ -243,6 +244,28 @@ async def get_waypoint_suggestions(request: WaypointRequest):
             travel_mode=request.travel_mode,
             num_people=request.num_people,
             group_type=request.group_type,
+        )
+        return result
+    except RuntimeError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    from app.services.trip_chatbot import chat_with_roadbuddy
+
+
+class ChatMessage(BaseModel):
+    message: str
+    history: Optional[list[dict]] = []
+
+
+@router.post("/chat")
+async def trip_chat(request: ChatMessage):
+    """
+    AI-powered conversational trip planning chatbot.
+    Supports multi-turn conversation with history.
+    """
+    try:
+        result = await chat_with_roadbuddy(
+            message=request.message,
+            history=request.history,
         )
         return result
     except RuntimeError as e:
