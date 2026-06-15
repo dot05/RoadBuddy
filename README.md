@@ -196,7 +196,7 @@ GOOGLE_MAPS_API_KEY = (optional, for real routing)
 
 ## 11. Work Division
 
-### Mahendra (AI & Frontend)
+### Kunal (AI & Frontend)
 - Built all 7 AI services from scratch
 - Upgraded AI trip planner with season/group/budget context
 - Built AI waypoint suggester
@@ -215,7 +215,7 @@ GOOGLE_MAPS_API_KEY = (optional, for real routing)
 - Fixed CI/CD pipeline (GitHub Actions)
 - Helped with Render deployment
 
-### Kunal (Backend & Database)
+### Vaibhav (Backend & Database)
 - FastAPI project setup and structure
 - JWT authentication with bcrypt
 - User registration and login
