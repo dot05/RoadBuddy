@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -43,3 +44,87 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         "trip_count": len(trips),
         "vehicle_count": len(vehicles)
     })
+@router.get("/plan-trip", response_class=HTMLResponse)
+def plan_trip_page(request: Request, db: Session = Depends(get_db)):
+    user = get_user_from_cookie(request, db)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    vehicles = db.query(Vehicle).filter(
+        Vehicle.user_id == user.id
+    ).all()
+
+    # Pass token to template so JS can use it
+    token = request.cookies.get("access_token")
+
+    return templates.TemplateResponse(request, "plan_trip.html", {
+        "user": user,
+        "vehicles": vehicles,
+        "token": token,
+    })
+"""
+Add these routes to dashboard_pages.py at the bottom:
+"""
+
+@router.get("/add-vehicle", response_class=HTMLResponse)
+def add_vehicle_page(request: Request, db: Session = Depends(get_db)):
+    user = get_user_from_cookie(request, db)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    vehicles = db.query(Vehicle).filter(Vehicle.user_id == user.id).all()
+
+    success = request.query_params.get("success")
+    return templates.TemplateResponse(request, "add_vehicle.html", {
+        "user": user,
+        "vehicles": vehicles,
+        "success": success,
+    })
+
+
+@router.post("/add-vehicle", response_class=HTMLResponse)
+def add_vehicle_submit(
+    request: Request,
+    name: str = Form(...),
+    fuel_type: str = Form(...),
+    category: str = Form(...),
+    mileage_kmpl: float = Form(...),
+    db: Session = Depends(get_db)
+):
+    user = get_user_from_cookie(request, db)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    vehicle = Vehicle(
+        user_id=user.id,
+        name=name,
+        fuel_type=fuel_type,
+        category=category,
+        mileage_kmpl=mileage_kmpl,
+    )
+    db.add(vehicle)
+    db.commit()
+
+    return RedirectResponse("/add-vehicle?success=Vehicle added successfully!", status_code=303)
+
+
+@router.post("/delete-vehicle/{vehicle_id}")
+def delete_vehicle(
+    vehicle_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    user = get_user_from_cookie(request, db)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    vehicle = db.query(Vehicle).filter(
+        Vehicle.id == vehicle_id,
+        Vehicle.user_id == user.id
+    ).first()
+
+    if vehicle:
+        db.delete(vehicle)
+        db.commit()
+
+    return RedirectResponse("/add-vehicle?success=Vehicle deleted.", status_code=303)
