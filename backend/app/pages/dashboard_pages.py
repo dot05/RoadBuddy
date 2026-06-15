@@ -128,3 +128,49 @@ def delete_vehicle(
         db.commit()
 
     return RedirectResponse("/add-vehicle?success=Vehicle deleted.", status_code=303)
+
+@router.get("/my-trips", response_class=HTMLResponse)
+def my_trips_page(request: Request, db: Session = Depends(get_db)):
+    user = get_user_from_cookie(request, db)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+ 
+    from app.models.models import TripStop
+    trips = db.query(Trip).filter(
+        Trip.user_id == user.id
+    ).order_by(Trip.created_at.desc()).all()
+ 
+    # Attach stops to each trip
+    for trip in trips:
+        trip.stops = db.query(TripStop).filter(
+            TripStop.trip_id == trip.id
+        ).order_by(TripStop.day, TripStop.time_slot).all()
+ 
+    return templates.TemplateResponse(request, "my_trips.html", {
+        "user": user,
+        "trips": trips,
+    })
+ 
+ 
+@router.post("/delete-trip/{trip_id}")
+def delete_trip(
+    trip_id: int,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    user = get_user_from_cookie(request, db)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+ 
+    from app.models.models import TripStop
+    trip = db.query(Trip).filter(
+        Trip.id == trip_id,
+        Trip.user_id == user.id
+    ).first()
+ 
+    if trip:
+        db.query(TripStop).filter(TripStop.trip_id == trip.id).delete()
+        db.delete(trip)
+        db.commit()
+ 
+    return RedirectResponse("/my-trips", status_code=303)
