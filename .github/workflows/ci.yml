@@ -1,36 +1,61 @@
-name: RoadBuddy CI Suite
+name: Roadbuddy CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - develop
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+      - develop
 
 jobs:
-  test:
+  backend-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
 
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: testuser
+          POSTGRES_PASSWORD: testpass
+          POSTGRES_DB: testdb
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: "3.11"
+          cache: 'pip'
+          cache-dependency-path: backend/requirements.txt
+      
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest fastapi httpx starlette anyio pydantic
-          if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
-
-      # This creates the missing static folder and runs the tests with your env variables
+          pip install -r requirements.txt
       - name: Run tests
         env:
-          DATABASE_URL: "sqlite:///./test.db"
-          SECRET_KEY: "github_actions_dummy_secret_key_for_testing"
+          PYTHONPATH: .
+          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+        run: pytest tests/ -v
+  deploy:
+    runs-on: ubuntu-latest
+    needs: backend-test
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to Render
         run: |
-          mkdir -p static
-          export PYTHONPATH=backend
-          python -m pytest backend/ -v
+          curl -X Post ${{ secrets.RENDER_DEPLOY_HOOK }}
