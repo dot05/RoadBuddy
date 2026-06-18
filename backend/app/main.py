@@ -19,6 +19,8 @@ with engine.begin() as connection:
     except Exception as e:
         print("Schema update error:", e)
 
+from app.core.config import settings
+
 app = FastAPI(
     title="RoadBuddy AI",
     description="India's Ultimate Road Trip Companion — API Backend",
@@ -31,7 +33,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
