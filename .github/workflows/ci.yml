@@ -25,8 +25,11 @@ jobs:
           pip install pytest fastapi httpx starlette anyio pydantic
           if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
 
-      # This sets the folder context AND explicitly targets the backend/tests folder
+      # This sets the folder context AND provides the missing environment variables Pydantic requires
       - name: Run tests
+        env:
+          DATABASE_URL: "sqlite:///./test.db"
+          SECRET_KEY: "github_actions_dummy_secret_key_for_testing"
         run: |
           export PYTHONPATH=backend
           python -m pytest backend/ -v
