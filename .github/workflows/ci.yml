@@ -48,7 +48,7 @@ jobs:
       - name: Run tests
         env:
           PYTHONPATH: .
-          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+          DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb?sslmode=disable&connect_timeout=10
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
         run: pytest tests/ -v
   deploy:
