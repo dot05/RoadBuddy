@@ -3,8 +3,7 @@ name: Roadbuddy CI
 on:
   push:
     branches:
-      - main
-      - develop
+      - '**'
   pull_request:
     branches:
       - main
@@ -59,4 +58,4 @@ jobs:
     steps:
       - name: Deploy to Render
         run: |
-          curl -X Post ${{ secrets.RENDER_DEPLOY_HOOK }}
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
