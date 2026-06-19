@@ -3,8 +3,7 @@ name: Roadbuddy CI
 on:
   push:
     branches:
-      - main
-      - develop
+      - '**'
   pull_request:
     branches:
       - main
@@ -51,6 +50,7 @@ jobs:
         env:
           PYTHONPATH: .
           DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
         run: pytest tests/ -v
   deploy:
     runs-on: ubuntu-latest
@@ -59,4 +59,4 @@ jobs:
     steps:
       - name: Deploy to Render
         run: |
-          curl -X Post ${{ secrets.RENDER_DEPLOY_HOOK }}
+          curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
