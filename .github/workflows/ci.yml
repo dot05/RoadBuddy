@@ -50,6 +50,7 @@ jobs:
         env:
           PYTHONPATH: .
           DATABASE_URL: postgresql://testuser:testpass@localhost:5432/testdb
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
         run: pytest tests/ -v
   deploy:
     runs-on: ubuntu-latest
