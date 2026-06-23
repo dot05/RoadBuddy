@@ -498,6 +498,12 @@
         <div class="autocomplete-dropdown" id="ac-destination"></div>
       </div>
 
+      <div class="panel-label" style="margin-top:10px;">Travel Date</div>
+      <div class="autocomplete-wrap">
+        <span class="input-icon">📅</span>
+        <input type="date" class="loc-input" id="travel-date-input" style="padding-left: 36px;" />
+      </div>
+
       <button class="get-routes-btn" id="get-routes-btn" onclick="getRoutes()" disabled>
         🗺️ Get Routes
       </button>
@@ -941,7 +947,8 @@
 
     let services = [];
     try {
-      const params = new URLSearchParams({ origin: originVal, destination: destVal, user_id: currentUserId });
+      const dateVal = document.getElementById('travel-date-input')?.value || new Date().toISOString().slice(0, 10);
+      const params = new URLSearchParams({ origin: originVal, destination: destVal, user_id: currentUserId, travel_date: dateVal });
       const res = await fetch(`/api/provider/services?${params.toString()}`);
       if (res.ok) services = await res.json();
     } catch (e) {
@@ -1159,7 +1166,7 @@
       grid.innerHTML = `<div style="color: #64748b; font-size: 13px; padding: 20px; grid-column: 1 / -1; text-align: center;">Fetching seat map...</div>`;
 
       // Fetch already booked seats from API
-      const travelDate = new Date().toISOString().slice(0, 10);
+      const travelDate = document.getElementById('travel-date-input')?.value || new Date().toISOString().slice(0, 10);
       let bookedSeatsList = [];
       try {
         const res = await fetch(`/api/provider/vehicles/${vehicleId}/booked-seats?travel_date=${travelDate}`);
@@ -1447,7 +1454,7 @@
       passenger_name: passengerName,
       passenger_phone: passengerPhone,
       passenger_email: passengerEmail,
-      travel_date: new Date().toISOString().slice(0, 10),
+      travel_date: document.getElementById('travel-date-input')?.value || new Date().toISOString().slice(0, 10),
       num_seats: isPrivateBooking ? 1 : selectedSeats.length,
       pickup_location: finalPickupLocation,
       dropoff_location: finalDropoffLocation,
@@ -1662,6 +1669,11 @@
   window.addEventListener('DOMContentLoaded', () => {
     initMap();
     selectMode('car');
+    
+    const dateInput = document.getElementById('travel-date-input');
+    if (dateInput) {
+      dateInput.value = new Date().toISOString().slice(0, 10);
+    }
     
     // Live validation for passenger inputs
     document.getElementById("passenger-name-input").addEventListener("input", updateSeatSummary);

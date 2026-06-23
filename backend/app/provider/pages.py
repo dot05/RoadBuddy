@@ -21,6 +21,7 @@ from app.provider.auth import (
     hash_password, verify_password,
     create_provider_token, get_provider_from_cookie,
 )
+from app.provider.router import _auto_cleanup_expired_routes
 
 router = APIRouter(prefix="/provider")
 templates = Jinja2Templates(directory="templates")
@@ -169,6 +170,7 @@ def vehicles_page(request: Request, db: Session = Depends(get_db)):
     if not provider.company_name:
         return RedirectResponse("/provider/dashboard?setup_required=1", status_code=303)
 
+    _auto_cleanup_expired_routes(db)
     vehicles = db.query(ProviderVehicle).filter(
         ProviderVehicle.provider_id == provider.id
     ).all()
@@ -257,6 +259,7 @@ def add_vehicle_submit(
     driver_included: str = Form("true"),
     pickup_points: Optional[str] = Form(None),
     dropoff_points: Optional[str] = Form(None),
+    service_dates: Optional[str] = Form(None),
     vehicle_asset_id: Optional[int] = Form(None),
     db: Session = Depends(get_db),
 ):
@@ -297,6 +300,7 @@ def add_vehicle_submit(
         total_seats=v_seats or 4,
         pickup_points=pickup_points,
         dropoff_points=dropoff_points,
+        service_dates=service_dates,
     )
     db.add(vehicle)
     db.commit()

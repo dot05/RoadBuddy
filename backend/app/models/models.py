@@ -411,6 +411,7 @@ class ProviderVehicle(Base):
     is_active       = Column(Boolean, default=True)
     pickup_points   = Column(String, nullable=True)
     dropoff_points  = Column(String, nullable=True)
+    service_dates   = Column(String, nullable=True)
     created_at      = Column(DateTime, server_default=func.now())
  
     provider = relationship("Provider", back_populates="vehicles")
