@@ -120,12 +120,31 @@ def delete_vehicle_asset(
 
 # ── Vehicle Management ────────────────────────────────────────────────────
 
+def _auto_cleanup_expired_routes(db: Session):
+    import datetime
+    today_str = datetime.date.today().isoformat()
+    expired_vehicles = db.query(ProviderVehicle).filter(
+        ProviderVehicle.is_active == True,
+        ProviderVehicle.service_dates.isnot(None),
+        ProviderVehicle.service_dates != ""
+    ).all()
+    
+    for v in expired_vehicles:
+        dates = [d.strip() for d in v.service_dates.split(",") if d.strip()]
+        if dates:
+            latest_date = max(dates)
+            if latest_date < today_str:
+                v.is_active = False
+    db.commit()
+
+
 @router.post("/vehicles", response_model=VehicleOut, status_code=201)
 def add_vehicle(
     data: VehicleCreate,
     provider: Provider = Depends(get_current_provider),
     db: Session = Depends(get_db),
 ):
+    _auto_cleanup_expired_routes(db)
     v_type = data.vehicle_type
     v_name = data.vehicle_name
     v_driver = data.driver_included
@@ -157,6 +176,7 @@ def add_vehicle(
         total_seats=v_seats,
         pickup_points=data.pickup_points,
         dropoff_points=data.dropoff_points,
+        service_dates=data.service_dates,
     )
     db.add(vehicle)
     db.commit()
@@ -169,6 +189,7 @@ def list_my_vehicles(
     provider: Provider = Depends(get_current_provider),
     db: Session = Depends(get_db),
 ):
+    _auto_cleanup_expired_routes(db)
     vehicles = db.query(ProviderVehicle).filter(
         ProviderVehicle.provider_id == provider.id
     ).all()
@@ -261,6 +282,7 @@ def list_cab_services(
     origin: str | None = None,
     destination: str | None = None,
     user_id: int | None = None,
+    travel_date: str | None = None,
     db: Session = Depends(get_db),
 ):
     """
@@ -269,6 +291,7 @@ def list_cab_services(
     required — origin/destination are optional loose filters.
     Public — no auth needed.
     """
+    _auto_cleanup_expired_routes(db)
     query = db.query(ProviderVehicle).filter(ProviderVehicle.is_active == True)
     if origin:
         from sqlalchemy import func
@@ -295,6 +318,12 @@ def list_cab_services(
         category = _derive_cab_category(provider, v)
         if cab_category and cab_category.lower() != category:
             continue
+
+        # Filter by travel_date if service_dates is specified
+        if travel_date and v.service_dates:
+            dates = [d.strip() for d in v.service_dates.split(",") if d.strip()]
+            if travel_date not in dates:
+                continue
 
         # Private cab visibility logic:
         if v.destination == "Private":
@@ -326,6 +355,7 @@ def list_cab_services(
             is_active=v.is_active,
             pickup_points=v.pickup_points,
             dropoff_points=v.dropoff_points,
+            service_dates=v.service_dates,
         ))
     return results
 
@@ -333,6 +363,7 @@ def list_cab_services(
 @router.post("/search", response_model=list[VehicleSearchResult])
 def search_vehicles(data: VehicleSearchRequest, db: Session = Depends(get_db)):
     """Search available provider vehicles for a route. Public — no auth needed."""
+    _auto_cleanup_expired_routes(db)
     from sqlalchemy import func
     vehicles = db.query(ProviderVehicle).filter(
         ((ProviderVehicle.origin.ilike(f"%{data.origin}%")) |
@@ -346,6 +377,12 @@ def search_vehicles(data: VehicleSearchRequest, db: Session = Depends(get_db)):
     for v in vehicles:
         if v.seats_available < data.num_seats:
             continue
+        # Filter by travel_date if service_dates is specified
+        if data.travel_date and v.service_dates:
+            dates = [d.strip() for d in v.service_dates.split(",") if d.strip()]
+            if data.travel_date not in dates:
+                continue
+
         provider = db.query(Provider).filter(Provider.id == v.provider_id).first()
         fare = v.fixed_fare_inr if v.fixed_fare_inr else (v.price_per_km_inr or 0) * 100  # rough estimate
         results.append(VehicleSearchResult(
@@ -485,6 +522,7 @@ def _to_vehicle_out(v: ProviderVehicle) -> VehicleOut:
         is_active=v.is_active,
         pickup_points=v.pickup_points,
         dropoff_points=v.dropoff_points,
+        service_dates=v.service_dates,
         vehicle_asset_id=v.vehicle_asset_id,
     )
 

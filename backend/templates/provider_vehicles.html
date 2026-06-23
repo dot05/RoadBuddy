@@ -302,6 +302,11 @@
                 <span>📤</span> <strong>Drop-offs:</strong> {{ v.dropoff_points.split(';')|join(', ') }}
               </div>
               {% endif %}
+              {% if v.service_dates %}
+              <div style="font-size: 11.5px; color: #1DB954; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
+                <span>📅</span> <strong>Dates:</strong> {{ v.service_dates.split(',')|join(', ') }}
+              </div>
+              {% endif %}
             </div>
           </div>
           <form method="POST" action="/provider/vehicles/{{ v.id }}/delete" onsubmit="return confirm('Delete this vehicle listing?')">
@@ -549,6 +554,17 @@
                 </div>
                 <button type="button" class="btn-toggle" onclick="addDynamicDropoffInput()" style="margin-top: 8px; padding: 4px 10px; font-size: 11px; background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); color: #a0a0c0;">+ Add Drop-off Point</button>
               </div>
+              
+              <!-- Service Dates dynamic group -->
+              <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); padding: 14px; border-radius: 8px; margin-top: 12px;">
+                <label style="font-size: 11px; color: #1DB954; font-weight: 700; display: block; margin-bottom: 8px; text-transform: uppercase;">📅 Available Service Dates</label>
+                <div id="public-dates-inputs-wrap" style="display: flex; flex-direction: column; gap: 8px;">
+                  <div style="display: flex; gap: 8px;">
+                    <input type="date" class="dynamic-date-input" required style="flex: 1; background: #1a1a30; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px; border-radius: 6px; outline: none;" />
+                  </div>
+                </div>
+                <button type="button" class="btn-toggle" onclick="addDynamicDateInput()" style="margin-top: 8px; padding: 4px 10px; font-size: 11px; background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); color: #a0a0c0;">+ Add Date</button>
+              </div>
             </div>
           </div>
           <button type="submit" class="btn-add-vehicle" {% if not vehicle_assets %}disabled style="opacity: 0.5; cursor: not-allowed; background: #505050;"{% endif %}>+ Add Route Vehicle</button>
@@ -623,6 +639,10 @@
       // Gather dynamic dropoff points
       const dropoffInputs = Array.from(form.querySelectorAll('.dynamic-dropoff-input')).map(input => input.value.trim()).filter(Boolean);
       formData.set('dropoff_points', dropoffInputs.join(';'));
+
+      // Gather dynamic service dates
+      const dateInputs = Array.from(form.querySelectorAll('.dynamic-date-input')).map(input => input.value.trim()).filter(Boolean);
+      formData.set('service_dates', dateInputs.join(','));
     }
 
     // Call POST API asynchronously
@@ -781,6 +801,17 @@
     div.innerHTML = `
       <input type="text" class="dynamic-dropoff-input" placeholder="e.g. Next Dropoff Stop" style="flex: 1;" />
       <button type="button" class="btn-toggle" onclick="detectProviderGPSForInput(this)" style="padding: 0 10px; margin: 0; background: rgba(29, 158, 117, 0.15); border-color: rgba(29, 158, 117, 0.25); color: #1DB954; font-size: 12px; display: flex; align-items: center; justify-content: center;">📍</button>
+      <button type="button" class="btn-toggle" onclick="this.parentNode.remove()" style="padding: 0 10px; margin: 0; background: rgba(255, 107, 53, 0.1); border-color: rgba(255, 107, 53, 0.2); color: #ff6b6b; font-size: 14px; line-height: 1;">&times;</button>
+    `;
+    wrap.appendChild(div);
+  }
+
+  function addDynamicDateInput() {
+    const wrap = document.getElementById("public-dates-inputs-wrap");
+    const div = document.createElement("div");
+    div.style.cssText = "display: flex; gap: 8px;";
+    div.innerHTML = `
+      <input type="date" class="dynamic-date-input" required style="flex: 1; background: #1a1a30; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 8px; border-radius: 6px; outline: none;" />
       <button type="button" class="btn-toggle" onclick="this.parentNode.remove()" style="padding: 0 10px; margin: 0; background: rgba(255, 107, 53, 0.1); border-color: rgba(255, 107, 53, 0.2); color: #ff6b6b; font-size: 14px; line-height: 1;">&times;</button>
     `;
     wrap.appendChild(div);

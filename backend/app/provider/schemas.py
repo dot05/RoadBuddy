@@ -92,6 +92,7 @@ class VehicleCreate(BaseModel):
     total_seats: int = 4
     pickup_points: Optional[str] = None
     dropoff_points: Optional[str] = None
+    service_dates: Optional[str] = None
     vehicle_asset_id: Optional[int] = None
 
 
@@ -104,6 +105,7 @@ class VehicleUpdate(BaseModel):
     fixed_fare_inr: Optional[float] = None
     total_seats: Optional[int] = None
     is_active: Optional[bool] = None
+    service_dates: Optional[str] = None
 
 
 class VehicleOut(BaseModel):
@@ -123,6 +125,7 @@ class VehicleOut(BaseModel):
     is_active: bool
     pickup_points: Optional[str] = None
     dropoff_points: Optional[str] = None
+    service_dates: Optional[str] = None
     vehicle_asset_id: Optional[int] = None
 
     class Config:
@@ -171,6 +174,7 @@ class CabServiceResult(BaseModel):
     is_active: bool
     pickup_points: Optional[str] = None
     dropoff_points: Optional[str] = None
+    service_dates: Optional[str] = None
 
     class Config:
         from_attributes = True
