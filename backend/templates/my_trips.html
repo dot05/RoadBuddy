@@ -91,7 +91,8 @@
     {% endif %}
 
     <!-- Actions -->
-    <div class="trip-actions">
+    <div class="trip-actions" style="display: flex; gap: 8px;">
+      <a href="/my-trips/{{ trip.id }}/itinerary" class="btn-primary" style="font-size: 12px; padding: 6px 12px; text-decoration: none; display: inline-block; background: #1d9e75; color: #fff; border-radius: 4px; font-weight: 700;">🚀 Start Trip</a>
       <a href="/plan-trip" class="btn-secondary" style="font-size:12px;padding:6px 12px;">🔄 Plan Similar</a>
     </div>
 
@@ -101,7 +102,29 @@
 
 {% else %}
 <div class="empty-state">
-  <div class="empty-icon">🗺️</div>
+  <div class="empty-icon" style="animation: floatIllustration 3.5s ease-in-out infinite; display: inline-block; margin-bottom: 20px;">
+    <svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="max-width: 100%;">
+      <!-- Folded map base -->
+      <path d="M20 30 L45 20 L75 30 L100 20 L100 90 L75 100 L45 90 L20 100 Z" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="3" stroke-linejoin="round"/>
+      <!-- Map folds/shading -->
+      <path d="M45 20 L45 90" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="2 2"/>
+      <path d="M75 30 L75 100" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="2 2"/>
+      <path d="M45 20 L75 30 L75 100 L45 90 Z" fill="#cbd5e1" opacity="0.3"/>
+      <!-- Dotted travel path -->
+      <path d="M30 80 Q 40 45, 60 65 T 90 40" stroke="#6366f1" stroke-width="3" stroke-linecap="round" stroke-dasharray="6 6"/>
+      <!-- Starting marker -->
+      <circle cx="30" cy="80" r="4" fill="#6366f1"/>
+      <!-- Ending location marker pin -->
+      <g transform="translate(90, 40)">
+        <path d="M0 -12 C-5 -12, -9 -8, -9 -3 C-9 4, 0 12, 0 12 C0 12, 9 4, 9 -3 C9 -8, 5 -12, 0 -12 Z" fill="#10b981"/>
+        <circle cx="0" cy="-3" r="3" fill="#ffffff"/>
+      </g>
+      <!-- Little compass rose -->
+      <circle cx="95" cy="85" r="12" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+      <path d="M95 76 L98 85 L95 88 L92 85 Z" fill="#ef4444"/>
+      <path d="M95 94 L92 85 L95 82 L98 85 Z" fill="#475569"/>
+    </svg>
+  </div>
   <h2>No trips yet!</h2>
   <p>Plan your first AI-powered road trip and it will appear here.</p>
   <a href="/plan-trip" class="btn-plan" style="margin-top:16px;display:inline-block">+ Plan a Trip</a>

@@ -51,9 +51,16 @@ async def create_trip(
             vehicle_id         = int(data.vehicle_id) if data.vehicle_id else None,
             origin             = data.origin,
             destination        = data.destination,
+            origin_lat         = data.origin_lat,
+            origin_lon         = data.origin_lon,
+            destination_lat    = data.destination_lat,
+            destination_lon    = data.destination_lon,
             start_date         = data.start_date,
+            end_date           = data.end_date,
             budget_inr         = data.budget_inr,
             travel_mode        = data.travel_mode,
+            group_type         = data.group_type,
+            num_people         = data.num_people,
             fuel_cost_inr      = trip_out.fuel_cost_inr,
             toll_cost_inr      = trip_out.toll_cost_inr,
             transport_fare_inr = trip_out.transport_fare_inr,
@@ -79,6 +86,15 @@ async def create_trip(
         db.commit()
 
         trip_out.id = str(trip.id)
+        trip_out.start_date = trip.start_date
+        trip_out.end_date = trip.end_date
+        trip_out.group_type = trip.group_type
+        trip_out.num_people = trip.num_people
+        trip_out.budget_inr = trip.budget_inr
+        trip_out.origin_lat = trip.origin_lat
+        trip_out.origin_lon = trip.origin_lon
+        trip_out.destination_lat = trip.destination_lat
+        trip_out.destination_lon = trip.destination_lon
         return trip_out
 
     except RuntimeError as e:
@@ -100,6 +116,10 @@ def list_my_trips(
             id                       = str(t.id),
             origin                   = t.origin,
             destination              = t.destination,
+            origin_lat               = t.origin_lat,
+            origin_lon               = t.origin_lon,
+            destination_lat          = t.destination_lat,
+            destination_lon          = t.destination_lon,
             travel_mode              = t.travel_mode,
             total_distance_km        = 0,
             stops                    = [],
@@ -111,6 +131,11 @@ def list_my_trips(
             food_cost_inr            = t.food_cost_inr,
             total_estimated_cost_inr = t.total_cost_inr,
             ai_summary               = t.ai_summary or "",
+            start_date               = t.start_date,
+            end_date                 = t.end_date,
+            group_type               = t.group_type,
+            num_people               = t.num_people,
+            budget_inr               = t.budget_inr,
         )
         for t in trips
     ]
@@ -148,6 +173,10 @@ def get_trip(
         id                       = str(trip.id),
         origin                   = trip.origin,
         destination              = trip.destination,
+        origin_lat               = trip.origin_lat,
+        origin_lon               = trip.origin_lon,
+        destination_lat          = trip.destination_lat,
+        destination_lon          = trip.destination_lon,
         travel_mode              = trip.travel_mode,
         total_distance_km        = 0,
         stops                    = stop_list,
@@ -159,6 +188,11 @@ def get_trip(
         food_cost_inr            = trip.food_cost_inr,
         total_estimated_cost_inr = trip.total_cost_inr,
         ai_summary               = trip.ai_summary or "",
+        start_date               = trip.start_date,
+        end_date                 = trip.end_date,
+        group_type               = trip.group_type,
+        num_people               = trip.num_people,
+        budget_inr               = trip.budget_inr,
     )
 
 

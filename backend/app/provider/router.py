@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.models import Provider, ProviderVehicle, ProviderBooking, User, ProviderVehicleAsset
 from app.provider.schemas import (
-    ProviderRegister, ProviderLogin, ProviderOut,
+    ProviderRegister, ProviderLogin, ProviderOut, ProviderUpdate,
     VehicleCreate, VehicleUpdate, VehicleOut,
     VehicleSearchRequest, VehicleSearchResult,
     ProviderBookingCreate, ProviderBookingOut,
@@ -67,6 +67,19 @@ def login_provider(data: ProviderLogin, db: Session = Depends(get_db)):
 
 @router.get("/me", response_model=ProviderOut)
 def get_me(provider: Provider = Depends(get_current_provider)):
+    return provider
+
+
+@router.patch("/me", response_model=ProviderOut)
+def update_me(
+    data: ProviderUpdate,
+    provider: Provider = Depends(get_current_provider),
+    db: Session = Depends(get_db),
+):
+    for field, value in data.dict(exclude_unset=True).items():
+        setattr(provider, field, value)
+    db.commit()
+    db.refresh(provider)
     return provider
 
 
@@ -771,5 +784,22 @@ def check_unread_provider_bookings(
         ProviderBooking.message_unread == True
     ).count()
     return {"has_unread": count > 0}
+
+
+@router.post("/bookings/mark-read")
+def mark_user_bookings_as_read(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Mark all unread bookings for this traveler as read."""
+    unread = db.query(ProviderBooking).filter(
+        ProviderBooking.user_id == int(current_user["user_id"]),
+        ProviderBooking.message_unread == True
+    ).all()
+    for b in unread:
+        b.message_unread = False
+    if unread:
+        db.commit()
+    return {"status": "success", "marked_count": len(unread)}
 
 

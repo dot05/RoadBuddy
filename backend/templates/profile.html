@@ -2,45 +2,61 @@
 {% block title %}Profile — RoadBuddy{% endblock %}
 
 {% block content %}
+<div class="profile-container animate-fade-in-up" style="display: flex; justify-content: center; align-items: center; min-height: 70vh; padding: 20px 0;">
+  <div class="profile-card" style="width: 100%; max-width: 480px; margin: 0;">
+    <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 32px; border-bottom: 1px solid var(--border-color); padding-bottom: 24px;">
+      <!-- Vector Avatar representation -->
+      <div style="width: 64px; height: 64px; background: var(--primary-light); color: var(--primary-hover); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; flex-shrink: 0; animation: floatIllustration 4s ease-in-out infinite; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.15); border: 2px solid var(--surface);">
+        👤
+      </div>
+      <div>
+        <h1 style="font-size: 24px; font-weight: 800; color: var(--text-main); margin: 0; line-height: 1.2;">My Profile</h1>
+        <p style="font-size: 13px; color: var(--text-muted); margin-top: 4px;">Update details and manage password</p>
+      </div>
+    </div>
 
-<h1>👤 My Profile</h1>
+    {% if success %}
+      <p class="success">{{ success }}</p>
+    {% endif %}
+    {% if error %}
+      <p class="error">{{ error }}</p>
+    {% endif %}
 
-{% if success %}
-  <p class="success">{{ success }}</p>
-{% endif %}
-{% if error %}
-  <p class="error">{{ error }}</p>
-{% endif %}
+    <form method="post" action="/profile/update" style="display: flex; flex-direction: column; gap: 4px;">
+      <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Name</label>
+      <input 
+        type="text"
+        name="name"
+        value="{{ user.name }}"
+        required
+        style="width: 100%; padding: 11px 14px; margin-bottom: 18px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color); font-size: 13.5px; background: #f8fafc; transition: var(--transition);"
+        onfocus="this.style.borderColor='var(--primary)'; this.style.boxShadow='0 0 0 4px rgba(16, 185, 129, 0.1)';"
+        onblur="this.style.borderColor='var(--border-color)'; this.style.boxShadow='none';"
+      >
 
-<form method="post" action="/profile/update">
+      <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Email</label>
+      <input 
+        type="email"
+        name="email"
+        value="{{ user.email }}"
+        readonly
+        style="width: 100%; padding: 11px 14px; margin-bottom: 18px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color); font-size: 13.5px; background: #f1f5f9; color: var(--text-muted); cursor: not-allowed; transition: var(--transition);"
+      >
 
-<label>Name</label>
-<input 
-type="text"
-name="name"
-value="{{ user.name }}"
-required>
+      <label style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">New Password</label>
+      <input 
+        type="password"
+        name="password"
+        placeholder="Leave blank to keep current password"
+        style="width: 100%; padding: 11px 14px; margin-bottom: 24px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color); font-size: 13.5px; background: #f8fafc; transition: var(--transition);"
+        onfocus="this.style.borderColor='var(--primary)'; this.style.boxShadow='0 0 0 4px rgba(16, 185, 129, 0.1)';"
+        onblur="this.style.borderColor='var(--border-color)'; this.style.boxShadow='none';"
+      >
 
-
-<label>Email</label>
-<input 
-type="email"
-name="email"
-value="{{ user.email }}"
-readonly>
-
-
-<label>New Password</label>
-<input 
-type="password"
-name="password"
-placeholder="Optional">
-
-
-<button type="submit">
-Save Changes
-</button>
-
-</form>
-
+      <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 12px; font-size: 14.5px; font-weight: 700;">
+        Save Changes
+      </button>
+    </form>
+  </div>
+</div>
 {% endblock %}

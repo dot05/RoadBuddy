@@ -52,9 +52,21 @@ class ProviderOut(BaseModel):
     city: str
     service_type: str
     is_verified: bool
+    alternate_email: Optional[str] = None
+    booking_mode: Optional[str] = None
 
     class Config:
         from_attributes = True
+
+
+class ProviderUpdate(BaseModel):
+    company_name: Optional[str] = None
+    contact_person: Optional[str] = None
+    phone: Optional[str] = None
+    alternate_email: Optional[str] = None
+    city: Optional[str] = None
+    service_type: Optional[str] = None
+    booking_mode: Optional[str] = None
 
 
 # ── Vehicle Asset Management ──────────────────────────────────────────────

@@ -5,12 +5,6 @@
 <div class="dashboard-header">
   <h1>Hello, {{ user.name }} 👋</h1>
   <div style="display: flex; gap: 12px; align-items: center;">
-    <a href="/my-bookings" class="btn-secondary" style="padding: 10px 18px; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; position: relative;">
-      📅 My Bookings
-      {% if has_unread_bookings %}
-      <span style="position: absolute; top: -2px; right: -2px; width: 10px; height: 10px; background: #ff4d4f; border-radius: 50%; border: 2px solid #fff;"></span>
-      {% endif %}
-    </a>
     <a href="/plan-trip" class="btn-primary">+ Plan a Trip</a>
   </div>
 </div>
@@ -32,7 +26,7 @@
 <div class="ai-grid">
 
   <!-- Chatbot -->
-  <div class="ai-card" id="chatbot-card">
+  <div class="ai-card" id="chatbot-card" style="animation-delay: 0.05s;">
     <div class="ai-card-header">
       <span class="ai-icon">💬</span>
       <div>
@@ -50,7 +44,7 @@
   </div>
 
   <!-- Smart Search -->
-  <div class="ai-card">
+  <div class="ai-card" style="animation-delay: 0.1s;">
     <div class="ai-card-header">
       <span class="ai-icon">🔍</span>
       <div>
@@ -66,7 +60,7 @@
   </div>
 
   <!-- Waypoint Suggestions -->
-  <div class="ai-card">
+  <div class="ai-card" style="animation-delay: 0.15s;">
     <div class="ai-card-header">
       <span class="ai-icon">📍</span>
       <div>
@@ -83,7 +77,7 @@
   </div>
 
   <!-- Safety Check -->
-  <div class="ai-card">
+  <div class="ai-card" style="animation-delay: 0.2s;">
     <div class="ai-card-header">
       <span class="ai-icon">🛡️</span>
       <div>
@@ -101,7 +95,7 @@
   </div>
 
   <!-- Trip Recommendations -->
-  <div class="ai-card">
+  <div class="ai-card" style="animation-delay: 0.25s;">
     <div class="ai-card-header">
       <span class="ai-icon">✨</span>
       <div>
@@ -124,7 +118,7 @@
   </div>
 
   <!-- Journal Summarizer -->
-  <div class="ai-card">
+  <div class="ai-card" style="animation-delay: 0.3s;">
     <div class="ai-card-header">
       <span class="ai-icon">📔</span>
       <div>

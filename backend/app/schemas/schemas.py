@@ -91,6 +91,10 @@ class VehicleOut(VehicleCreate):
 class TripCreate(BaseModel):
     origin: str
     destination: str
+    origin_lat: Optional[float] = None
+    origin_lon: Optional[float] = None
+    destination_lat: Optional[float] = None
+    destination_lon: Optional[float] = None
     start_date: str
     end_date: str
     budget_inr: float
@@ -113,6 +117,10 @@ class TripOut(BaseModel):
     id: str
     origin: str
     destination: str
+    origin_lat: Optional[float] = None
+    origin_lon: Optional[float] = None
+    destination_lat: Optional[float] = None
+    destination_lon: Optional[float] = None
     travel_mode: TravelMode
     total_distance_km: float
     stops: List[ItineraryStop]
@@ -125,6 +133,11 @@ class TripOut(BaseModel):
     food_cost_inr: float = 0
     total_estimated_cost_inr: float
     ai_summary: str
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+    group_type: Optional[GroupType] = None
+    num_people: Optional[int] = 1
+    budget_inr: Optional[float] = None
 
 # ─── Fuel & Toll ──────────────────────────────────────────────────────────────
 

@@ -192,6 +192,76 @@ def delete_trip(trip_id: int, request: Request, db: Session = Depends(get_db)):
     return RedirectResponse("/my-trips", status_code=303)
 
 
+# ---------------- TRIP ITINERARY & START TRIP ----------------
+
+@router.get("/my-trips/{trip_id}/itinerary", response_class=HTMLResponse)
+def trip_itinerary_page(trip_id: int, request: Request, db: Session = Depends(get_db)):
+    user = get_user_from_cookie(request, db)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    from app.models.models import TripStop
+
+    trip = db.query(Trip).filter(
+        Trip.id == trip_id,
+        Trip.user_id == user.id
+    ).first()
+
+    if not trip:
+        return RedirectResponse("/my-trips", status_code=303)
+
+    trip.stops = db.query(TripStop).filter(
+        TripStop.trip_id == trip.id
+    ).order_by(TripStop.day, TripStop.time_slot).all()
+
+    token = request.cookies.get("access_token")
+    has_unread_bookings = check_unread_bookings(user, db)
+    
+    return templates.TemplateResponse(request, "trip_itinerary.html", {
+        "user": user,
+        "trip": trip,
+        "token": token,
+        "has_unread_bookings": has_unread_bookings
+    })
+
+
+@router.get("/start-trip", response_class=HTMLResponse)
+def start_trip_page(
+    request: Request,
+    trip_id: int = None,
+    origin: str = "",
+    destination: str = "",
+    db: Session = Depends(get_db)
+):
+    user = get_user_from_cookie(request, db)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+
+    trip = None
+    if trip_id:
+        trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
+        if trip:
+            if not origin:
+                origin = trip.origin
+            if not destination:
+                destination = trip.destination
+
+    vehicles = db.query(Vehicle).filter(Vehicle.user_id == user.id).all()
+    token = request.cookies.get("access_token")
+    has_unread_bookings = check_unread_bookings(user, db)
+
+    return templates.TemplateResponse(request, "start_trip.html", {
+        "user": user,
+        "vehicles": vehicles,
+        "token": token,
+        "trip_id": trip_id,
+        "trip": trip,
+        "origin": origin,
+        "destination": destination,
+        "has_unread_bookings": has_unread_bookings
+    })
+
+
 # ---------------- COMMUNITY ----------------
 
 @router.get("/community", response_class=HTMLResponse)
