@@ -208,3 +208,23 @@ def list_vehicles(
         )
         for v in vehicles
     ]
+
+
+@router.delete("/vehicles/{vehicle_id}", status_code=204)
+def delete_vehicle(
+    vehicle_id: str,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a vehicle from the user's garage."""
+    vehicle = db.query(Vehicle).filter(
+        Vehicle.id == int(vehicle_id),
+        Vehicle.user_id == int(current_user["user_id"])
+    ).first()
+
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+
+    db.delete(vehicle)
+    db.commit()
+    return None
