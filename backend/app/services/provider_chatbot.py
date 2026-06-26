@@ -451,7 +451,7 @@ def try_intercept_vehicle_update_flow(message: str, history: list[dict], provide
             pass
 
     # Avoid matching guidance questions
-    is_asking_guidance = any(word in msg_lower for word in ["how", "guide", "steps", "where do", "instruct", "tutorial", "process"])
+    is_asking_guidance = any(word in msg_lower for word in ["how", "guide", "steps", "where do", "instruct", "tutorial", "process", "show", "list", "display", "what are"])
     if is_asking_guidance:
         return None
 
