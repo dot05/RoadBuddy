@@ -469,7 +469,9 @@ def try_intercept_vehicle_update_flow(message: str, history: list[dict], provide
 
     parse_result = parse_vehicle_update(message, vehicles)
     if "error" in parse_result:
-        # Not a parseable update command
+        # If they clearly wanted to update (has_update_verb is True), return the error message
+        if has_update_verb:
+            return parse_result["error"]
         return None
 
     # If it is a question and doesn't clearly have an update verb, do not intercept
@@ -488,15 +490,7 @@ async def chat_with_provider_bot(message: str, history: list[dict] = None, provi
         
         messages = truncated_history + [{"role": "user", "content": message}]
         
-        # Check for vehicle update commands
-        if db and provider_id:
-            update_response = try_intercept_vehicle_update_flow(message, raw_history, provider_id, db)
-            if update_response:
-                updated_history = messages + [{"role": "assistant", "content": update_response}]
-                return {"response": update_response, "history": updated_history, "total_messages": len(updated_history)}
-
-        
-        # Guard rails check for out-of-scope keywords before calling LLM
+        # Guard rails check for out-of-scope keywords before anything else
         msg_lower = message.lower()
         non_app_words = ["weather", "code", "python", "javascript", "history", "recipe", "cook", "capital", "president", "prime minister", "who is", "who was", "write a"]
         app_words = ["vehicle", "booking", "revenue", "setting", "earning", "partner", "roadbuddy", "profile", "logout", "login", "register"]
@@ -505,7 +499,17 @@ async def chat_with_provider_bot(message: str, history: list[dict] = None, provi
         
         if is_out_of_scope:
             response_text = "I can only answer questions related to our app."
-        elif settings.groq_api_key:
+            updated_history = messages + [{"role": "assistant", "content": response_text}]
+            return {"response": response_text, "history": updated_history, "total_messages": len(updated_history)}
+            
+        # Check for vehicle update commands
+        if db and provider_id:
+            update_response = try_intercept_vehicle_update_flow(message, raw_history, provider_id, db)
+            if update_response:
+                updated_history = messages + [{"role": "assistant", "content": update_response}]
+                return {"response": update_response, "history": updated_history, "total_messages": len(updated_history)}
+
+        if settings.groq_api_key:
             try:
                 dynamic_prompt = SYSTEM_PROMPT
                 if db and provider_id:
