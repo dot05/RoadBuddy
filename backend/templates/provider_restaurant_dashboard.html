@@ -606,17 +606,81 @@
       
       <!-- Left Column: Orders Queue -->
       <div>
+        <!-- Incoming Order Requests Box (Message Box) -->
+        <div class="incoming-requests-box" id="incoming-requests-box" style="margin-bottom: 2rem; background: #fff; border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 1rem;">
+            <h3 style="font-size: 1.125rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 0.5rem; margin: 0;">
+              <span class="material-symbols-outlined" style="color: #3b82f6;">mail</span> Incoming Order Requests
+            </h3>
+            {% set pending_orders = [] %}
+            {% for o in orders %}
+              {% if o.status == 'pending' %}
+                {% set _ = pending_orders.append(o) %}
+              {% endif %}
+            {% endfor %}
+            <span id="unread-requests-badge" style="background-color: #ef4444; color: white; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.6rem; border-radius: 9999px;">{{ pending_orders|length }}</span>
+          </div>
+          
+          <div class="orders-container" id="incoming-requests-list">
+            {% if pending_orders|length == 0 %}
+              <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.875rem;">
+                <span class="material-symbols-outlined" style="font-size: 2.5rem; margin-bottom: 0.5rem; display: block; color: #cbd5e1;">mark_email_read</span>
+                No new requests.
+              </div>
+            {% else %}
+              {% for o in pending_orders %}
+                <div class="order-card" id="order-card-{{ o.id }}" style="border-left: 4px solid #3b82f6;">
+                  <div class="order-header">
+                    <div>
+                      <span class="order-id">Request #{{ o.id }}</span>
+                      <div class="order-user">From Traveler: <strong>{{ o.user_name }}</strong></div>
+                    </div>
+                    <span class="status-badge" style="background-color: #dbeafe; color: #1e40af;">PENDING</span>
+                  </div>
+                  
+                  <div class="order-items">
+                    <ul>
+                      {% for item in o['items'] %}
+                        <li>
+                          <span>{{ item.name }} <strong>x{{ item.quantity }}</strong></span>
+                          <span>₹{{ item.price * item.quantity }}</span>
+                        </li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                  
+                  <div class="order-footer">
+                    <div style="font-size: 0.875rem; color: var(--text-muted)">
+                      Total: <strong style="color: #0f172a;">₹{{ o.total_amount }}</strong>
+                    </div>
+                    <div class="order-actions">
+                      <button onclick="updateOrderStatus({{ o.id }}, 'preparing')" class="action-btn btn-green" style="padding: 0.5rem 1rem;">Accept</button>
+                      <button onclick="updateOrderStatus({{ o.id }}, 'declined')" class="action-btn" style="background-color: #ef4444; padding: 0.5rem 1rem;">Decline</button>
+                    </div>
+                  </div>
+                </div>
+              {% endfor %}
+            {% endif %}
+          </div>
+        </div>
+
         <h3 class="section-title">
           <span class="material-symbols-outlined">receipt_long</span> Orders Queue
         </h3>
         <div class="orders-container" id="orders-queue">
-          {% if orders|length == 0 %}
+          {% set queue_orders = [] %}
+          {% for o in orders %}
+            {% if o.status in ['preparing', 'ready', 'completed', 'declined'] %}
+              {% set _ = queue_orders.append(o) %}
+            {% endif %}
+          {% endfor %}
+          {% if queue_orders|length == 0 %}
             <div style="background: white; border: 1px solid var(--border); padding: 3rem; text-align: center; border-radius: 1rem; color: var(--text-muted);">
               <span class="material-symbols-outlined" style="font-size: 3rem; margin-bottom: 1rem; display: block; color: #cbd5e1;">inbox</span>
-              <p>No orders placed yet.</p>
+              <p>No active or past orders in queue.</p>
             </div>
           {% else %}
-            {% for o in orders %}
+            {% for o in queue_orders %}
               <div class="order-card" id="order-card-{{ o.id }}">
                 <div class="order-header">
                   <div>
@@ -628,7 +692,7 @@
                 
                 <div class="order-items">
                   <ul>
-                    {% for item in o.items %}
+                    {% for item in o['items'] %}
                       <li>
                         <span>{{ item.name }} <strong>x{{ item.quantity }}</strong></span>
                         <span>₹{{ item.price * item.quantity }}</span>
@@ -767,9 +831,13 @@
         });
         if (res.ok) {
           display.textContent = newVal + "m";
+        } else {
+          const data = await res.json().catch(() => ({}));
+          alert(`Error: ${data.detail || 'Failed to update preparation time'}`);
         }
       } catch (err) {
         console.error(err);
+        alert("Failed to connect to the server.");
       }
     }
 
@@ -783,31 +851,14 @@
         });
         
         if (res.ok) {
-          // Update status badge
-          const badge = document.getElementById(`order-status-badge-${orderId}`);
-          badge.textContent = newStatus;
-          badge.className = `status-badge status-${newStatus}`;
-          
-          // Update action buttons
-          const actionsDiv = document.getElementById(`action-buttons-${orderId}`);
-          if (newStatus === "preparing") {
-            actionsDiv.innerHTML = `<button onclick="updateOrderStatus(${orderId}, 'ready')" class="action-btn btn-green">Mark Ready</button>`;
-          } else if (newStatus === "ready") {
-            actionsDiv.innerHTML = `<button onclick="updateOrderStatus(${orderId}, 'completed')" class="action-btn btn-green">Complete Pickup</button>`;
-          } else if (newStatus === "completed") {
-            actionsDiv.innerHTML = "";
-            // Remove footer controls
-            const card = document.getElementById(`order-card-${orderId}`);
-            const footer = card.querySelector(".order-footer");
-            footer.innerHTML = `<div style="font-size: 0.75rem; color: var(--text-muted)">Order completed</div>`;
-            
-            // Decr active count
-            const activeCounter = document.getElementById("active-orders-count");
-            activeCounter.textContent = Math.max(0, parseInt(activeCounter.textContent) - 1);
-          }
+          window.location.reload();
+        } else {
+          const data = await res.json().catch(() => ({}));
+          alert(`Error: ${data.detail || 'Failed to update order status'}`);
         }
       } catch (err) {
         console.error(err);
+        alert("Failed to connect to the server.");
       }
     }
 

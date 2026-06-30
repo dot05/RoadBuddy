@@ -324,6 +324,34 @@ def trip_itinerary_page(trip_id: int, request: Request, db: Session = Depends(ge
     })
 
 
+@router.get("/trips/{trip_id}/restaurants/{restaurant_id}", response_class=HTMLResponse)
+def restaurant_menu_page(trip_id: int, restaurant_id: int, request: Request, db: Session = Depends(get_db)):
+    from fastapi import HTTPException
+    user = get_user_from_cookie(request, db)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+        
+    trip = db.query(Trip).filter(Trip.id == trip_id, Trip.user_id == user.id).first()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+        
+    from app.models.models import Restaurant
+    restaurant = db.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
+    if not restaurant:
+        raise HTTPException(status_code=404, detail="Restaurant not found")
+        
+    token = request.cookies.get("access_token")
+    has_unread_bookings = check_unread_bookings(user, db)
+    
+    return templates.TemplateResponse(request, "restaurant_menu.html", {
+        "user": user,
+        "trip": trip,
+        "restaurant": restaurant,
+        "token": token,
+        "has_unread_bookings": has_unread_bookings
+    })
+
+
 @router.get("/start-trip", response_class=HTMLResponse)
 def start_trip_page(
     request: Request,
