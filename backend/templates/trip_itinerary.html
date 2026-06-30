@@ -329,7 +329,7 @@
 
         <!-- Restaurants List -->
         <div class="space-y-4">
-          <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Discover Restaurants in {{ trip.destination }}</h4>
+          <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Discover Restaurants Along Your Route</h4>
           <div id="restaurants-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="col-span-full text-center py-6 text-slate-400 text-xs">
               Loading restaurants...
@@ -598,7 +598,7 @@
       </div>
 
       <!-- Dish Reviews & Ratings Section -->
-      <div class="border-t border-slate-200 pt-6">
+      <div id="review-input-container" class="border-t border-slate-200 pt-6 hidden">
         <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Add a Review for a Dish</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
           <div class="space-y-2">
@@ -2318,16 +2318,16 @@
   let currentReviewRating = 5;
 
   async function loadRestaurants() {
-    const dest = "{{ trip.destination }}";
+    const routeCitiesQuery = [destinationCity, originCity, ...stops].join(",");
     const container = document.getElementById("restaurants-container");
     if (!container) return;
 
     try {
-      const res = await fetch(`/api/food/restaurants?city=${encodeURIComponent(dest)}`);
+      const res = await fetch(`/api/food/restaurants?city=${encodeURIComponent(routeCitiesQuery)}`);
       if (res.ok) {
         const restaurants = await res.json();
         if (restaurants.length === 0) {
-          container.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400 text-xs italic">No highway partner restaurants found in ${dest}.</div>`;
+          container.innerHTML = `<div class="col-span-full text-center py-6 text-slate-400 text-xs italic">No highway partner restaurants found along your route.</div>`;
           return;
         }
 
@@ -2343,9 +2343,9 @@
               </div>
               <p class="text-[10px] text-slate-500 mt-1">${r.address}</p>
             </div>
-            <button onclick="openFoodMenu(${r.id}, '${r.name.replace(/'/g, "\\'")}', '${r.address.replace(/'/g, "\\'")}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-2 rounded transition-colors mt-2">
+            <a href="/trips/{{ trip.id }}/restaurants/${r.id}" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold py-2 rounded transition-colors mt-2 text-center block">
               View Menu & Order
-            </button>
+            </a>
           </div>
         `).join("");
       } else {
@@ -2369,6 +2369,9 @@
     const modal = document.getElementById("food-ordering-modal");
     modal.classList.remove("hidden");
     modal.classList.add("flex");
+    document.body.style.overflow = "hidden";
+    const modalBody = modal.querySelector(".overflow-y-auto");
+    if (modalBody) modalBody.scrollTop = 0;
 
     try {
       const res = await fetch(`/api/food/restaurants/${restId}/menu`);
@@ -2378,6 +2381,12 @@
         
         // Pop review select
         const reviewSelect = document.getElementById("review-dish-select");
+        const reviewContainer = document.getElementById("review-input-container");
+        if (data.can_review) {
+          reviewContainer.classList.remove("hidden");
+        } else {
+          reviewContainer.classList.add("hidden");
+        }
         reviewSelect.innerHTML = currentMenu.map(item => `
           <option value="${item.id}">${item.name}</option>
         `).join("");
@@ -2414,6 +2423,7 @@
     const modal = document.getElementById("food-ordering-modal");
     modal.classList.add("hidden");
     modal.classList.remove("flex");
+    document.body.style.overflow = "";
   }
 
   function addToCart(itemId) {
@@ -2554,6 +2564,38 @@
     }
   }
 
+  function showToastNotification(message, type = "success") {
+    let container = document.getElementById("toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "toast-container";
+      container.className = "fixed top-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none";
+      document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement("div");
+    toast.className = `p-4 rounded-2xl shadow-xl text-white font-medium text-xs flex items-center gap-2 transform translate-y-2 opacity-0 transition-all duration-300 pointer-events-auto max-w-sm ${
+      type === "success" ? "bg-emerald-600 border border-emerald-500" : "bg-rose-600 border border-rose-500"
+    }`;
+    toast.innerHTML = `
+      <span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : 'cancel'}</span>
+      <span>${message}</span>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Trigger animation
+    setTimeout(() => {
+      toast.classList.remove("translate-y-2", "opacity-0");
+    }, 10);
+    
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+      toast.classList.add("translate-y-2", "opacity-0");
+      setTimeout(() => toast.remove(), 300);
+    }, 5000);
+  }
+
   async function loadActiveFoodOrders() {
     const tracker = document.getElementById("active-food-orders");
     const list = document.getElementById("active-orders-list");
@@ -2563,7 +2605,25 @@
       const res = await fetch("/api/food/my-orders");
       if (res.ok) {
         const allOrders = await res.json();
-        const orders = allOrders.filter(o => ["paid", "preparing", "ready"].includes(o.status));
+        
+        // Show notification toast for accepted (preparing) or declined orders
+        allOrders.forEach(o => {
+          if (o.status === "preparing") {
+            const key = `notified_order_${o.id}_preparing`;
+            if (!localStorage.getItem(key)) {
+              showToastNotification(`🎉 ${o.restaurant_name} accepted your order!`, "success");
+              localStorage.setItem(key, "true");
+            }
+          } else if (o.status === "declined") {
+            const key = `notified_order_${o.id}_declined`;
+            if (!localStorage.getItem(key)) {
+              showToastNotification(`❌ ${o.restaurant_name} rejected your order.`, "error");
+              localStorage.setItem(key, "true");
+            }
+          }
+        });
+
+        const orders = allOrders.filter(o => ["pending", "paid", "preparing", "ready"].includes(o.status));
         if (orders.length === 0) {
           tracker.classList.add("hidden");
           return;
@@ -2572,8 +2632,21 @@
         tracker.classList.remove("hidden");
         list.innerHTML = orders.map(o => {
           let statusColor = "bg-blue-50 text-blue-700 border-blue-200";
-          if (o.status === "preparing") statusColor = "bg-amber-50 text-amber-700 border-amber-200";
-          if (o.status === "ready") statusColor = "bg-green-50 text-green-700 border-green-200";
+          let statusText = o.status;
+          
+          if (o.status === "pending") {
+            statusColor = "bg-indigo-50 text-indigo-700 border-indigo-200 animate-pulse";
+            statusText = "Pending Approval";
+          } else if (o.status === "preparing") {
+            statusColor = "bg-amber-50 text-amber-700 border-amber-200";
+            statusText = "Preparing Order";
+          } else if (o.status === "ready") {
+            statusColor = "bg-green-50 text-green-700 border-green-200";
+            statusText = "Ready for Pickup";
+          } else if (o.status === "paid") {
+            statusColor = "bg-sky-50 text-sky-700 border-sky-200";
+            statusText = "Accepted / Paid";
+          }
 
           return `
             <div class="border border-slate-200 rounded-xl p-4 bg-slate-50 text-left space-y-3">
@@ -2582,7 +2655,7 @@
                   <strong class="text-xs text-slate-800">${o.restaurant_name}</strong>
                   <span class="text-[9px] text-slate-400 block">Order #${o.id}</span>
                 </div>
-                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full border ${statusColor} uppercase">${o.status}</span>
+                <span class="text-[9px] font-bold px-2 py-0.5 rounded-full border ${statusColor} uppercase">${statusText}</span>
               </div>
               <div class="text-[10px] text-slate-600">
                 ${o.items.map(i => `${i.name} (x${i.quantity})`).join(", ")}

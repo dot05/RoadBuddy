@@ -58,7 +58,7 @@ def get_current_provider(
     db: Session = Depends(get_db),
 ) -> Provider:
     if not token:
-        token = request.cookies.get("provider_access_token")
+        token = request.cookies.get("provider_access_token") or request.cookies.get("food_provider_access_token")
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     provider_id = decode_provider_token(token)
@@ -70,7 +70,7 @@ def get_current_provider(
 
 def get_provider_from_cookie(request, db: Session):
     """For page routes — read token from cookie instead of header."""
-    token = request.cookies.get("provider_access_token")
+    token = request.cookies.get("provider_access_token") or request.cookies.get("food_provider_access_token")
     if not token:
         return None
     try:

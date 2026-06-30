@@ -442,3 +442,14 @@ async def get_provider_vehicles_json(request: Request):
         return await api_client.list_provider_vehicles(token)
     except Exception:
         return []
+
+
+@router.get("/user/bookings")
+async def get_user_cab_bookings(request: Request):
+    token = request.cookies.get("access_token")
+    if not token:
+        return []
+    try:
+        return await api_client._request("GET", "/api/provider/user/bookings", headers={"Authorization": f"Bearer {token}"})
+    except Exception:
+        return []

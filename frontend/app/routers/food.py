@@ -28,6 +28,7 @@ class OrderCreateProxy(BaseModel):
     items: List[FoodOrderItemProxy]
     total_amount: float
     payment_method: str = "prepaid"
+    user_arrival_time_mins: Optional[int] = 30
 
 class ArrivalUpdateProxy(BaseModel):
     arrival_time_mins: int

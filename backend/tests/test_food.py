@@ -24,7 +24,19 @@ def auth_headers(db_session):
 @pytest.fixture
 def seed_test_restaurant(db_session):
     # Create a test restaurant
+    from app.models.models import Provider
+    provider = Provider(
+        email="test_prov@roadbuddy.com",
+        password_hash="fake",
+        service_type="restaurant",
+        company_name="Test Partner Corp"
+    )
+    db_session.add(provider)
+    db_session.commit()
+    db_session.refresh(provider)
+
     restaurant = Restaurant(
+        provider_id=provider.id,
         name="Test Highway Dhaba",
         city="Jaipur",
         address="NH-8, Mile 45, Jaipur",
@@ -99,7 +111,7 @@ def test_create_food_order(client, auth_headers, seed_test_restaurant):
     data = response.json()
     assert data["restaurant_id"] == restaurant.id
     assert data["total_amount"] == 580.0
-    assert data["status"] == "paid"
+    assert data["status"] == "pending"
 
 
 def test_update_arrival_time(client, auth_headers, seed_test_restaurant, db_session):

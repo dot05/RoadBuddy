@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ restaurant.name }} - Menu & Ordering | RoadBuddy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Outfit', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+  </style>
+</head>
+<body class="min-h-screen font-sans text-slate-800 antialiased pb-12">
+  <!-- Navbar -->
+  <header class="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/80 backdrop-blur-md">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-6">
+        <a href="/my-trips/{{ trip.id }}/itinerary" class="flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
+          <span class="material-symbols-outlined text-lg">arrow_back</span>
+          Back to Itinerary
+        </a>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-full font-bold">Trip #{{ trip.id }}</span>
+        <span class="text-xs bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-full font-bold flex items-center gap-1">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+          Connected
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 mt-8">
+    <!-- Restaurant Header Card -->
+    <div class="bg-slate-900 text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden mb-8">
+      <div class="absolute right-0 top-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+        <div>
+          <div class="flex items-center gap-2 mb-2">
+            <span class="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border border-emerald-500/30">
+              Verified Highway Partner
+            </span>
+            <span class="bg-amber-500/20 text-amber-300 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-0.5">
+              <span class="material-symbols-outlined text-xs fill-current">star</span>
+              {{ restaurant.rating | default(4.0) }}
+            </span>
+          </div>
+          <h1 class="text-3xl font-extrabold tracking-tight">{{ restaurant.name }}</h1>
+          <p class="text-slate-300 text-sm mt-1 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-base">pin_drop</span>
+            {{ restaurant.address }}, {{ restaurant.city }}
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          {% if restaurant.contact_number %}
+          <a href="tel:{{ restaurant.contact_number }}" class="bg-white/10 hover:bg-white/20 text-white border border-white/15 px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all">
+            <span class="material-symbols-outlined text-lg">call</span>
+            Call Restaurant
+          </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Left Column: Dishes (2/3 width) -->
+      <div class="lg:col-span-2 space-y-6">
+        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-6">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <span class="material-symbols-outlined text-emerald-600">restaurant_menu</span>
+              Available Dishes & Menu
+            </h2>
+            <span class="text-xs text-slate-400" id="item-count">Loading menu...</span>
+          </div>
+
+          <div id="dishes-container" class="space-y-4">
+            <div class="text-center py-12 text-slate-400 text-sm italic">
+              Loading menu items...
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Cart & Checkout (1/3 width) -->
+      <div class="space-y-6">
+        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 sticky top-24">
+          <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-4">
+            <span class="material-symbols-outlined text-slate-600">shopping_cart</span>
+            Your Order Cart
+          </h3>
+
+          <!-- Cart Items -->
+          <div id="cart-items-list" class="space-y-3 min-h-[100px] max-h-[300px] overflow-y-auto pr-1">
+            <div class="text-center py-8 text-slate-400 text-xs italic">
+              Your cart is empty. Add dishes from the menu to start!
+            </div>
+          </div>
+
+          <!-- Price summary -->
+          <div class="pt-4 border-t border-slate-100 mt-4 space-y-4">
+            <div class="flex justify-between items-center text-sm font-bold text-slate-700">
+              <span>Subtotal:</span>
+              <span id="cart-total-amount">₹0</span>
+            </div>
+
+            <!-- Payment selection -->
+            <div class="space-y-2">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payment Method</label>
+              <select id="cart-payment-method" class="w-full text-xs border border-slate-200 rounded-xl p-3 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all">
+                <option value="prepaid_wallet">Prepay via Wallet (Recommended)</option>
+                <option value="prepaid_card">Prepay via Credit/Debit Card</option>
+              </select>
+            </div>
+
+            <!-- Arrival time selection -->
+            <div class="space-y-2">
+              <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Estimated Arrival Time (minutes)</label>
+              <input type="number" id="cart-arrival-time" min="5" max="300" value="30" required class="w-full text-xs border border-slate-200 rounded-xl p-3 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 transition-all" placeholder="e.g. 30" />
+            </div>
+
+            <!-- Action button -->
+            <button onclick="placeOrder()" id="place-order-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-3 rounded-xl transition-all shadow-md flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-lg">check_circle</span>
+              Pre-pay & Place Order
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Review Section (Full Width Bottom) -->
+    <div id="restaurant-review-box" class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 mt-8 hidden">
+      <h3 class="text-base font-bold text-slate-800 mb-4 flex items-center gap-2 border-b border-slate-100 pb-4">
+        <span class="material-symbols-outlined text-amber-500">rate_review</span>
+        Add a Review for a Dish
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-200">
+        <div class="space-y-2">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Select Dish</label>
+          <select id="review-dish-id" class="w-full text-xs border border-slate-200 rounded-xl p-3 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100"></select>
+        </div>
+        <div class="space-y-2">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Rating</label>
+          <div class="flex gap-1 text-slate-300 h-[42px] items-center" id="star-selector">
+            <span onclick="setRating(1)" class="material-symbols-outlined cursor-pointer text-2xl text-amber-400" data-rating="1">star</span>
+            <span onclick="setRating(2)" class="material-symbols-outlined cursor-pointer text-2xl text-amber-400" data-rating="2">star</span>
+            <span onclick="setRating(3)" class="material-symbols-outlined cursor-pointer text-2xl text-amber-400" data-rating="3">star</span>
+            <span onclick="setRating(4)" class="material-symbols-outlined cursor-pointer text-2xl text-amber-400" data-rating="4">star</span>
+            <span onclick="setRating(5)" class="material-symbols-outlined cursor-pointer text-2xl text-amber-400" data-rating="5">star</span>
+          </div>
+        </div>
+        <div class="space-y-2 md:col-span-3">
+          <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Comment</label>
+          <textarea id="review-comment" rows="3" class="w-full text-xs border border-slate-200 rounded-xl p-3 bg-white focus:outline-none focus:ring-2 focus:ring-slate-100" placeholder="Share your dining experience..."></textarea>
+        </div>
+        <div class="md:col-span-3 flex justify-end">
+          <button onclick="submitReview()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-6 py-3 rounded-xl transition-all shadow">
+            Submit Review
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const restId = {{ restaurant.id }};
+    const tripId = {{ trip.id }};
+    let menuItems = [];
+    let cart = {}; // {itemId: {name, qty, price}}
+    let selectedRating = 5;
+
+    // Load Menu
+    async function loadMenu() {
+      try {
+        const res = await fetch(`/api/food/restaurants/${restId}/menu`);
+        if (res.ok) {
+          const data = await res.json();
+          menuItems = data.menu_items;
+          
+          document.getElementById("item-count").textContent = `${menuItems.length} items available`;
+
+          // Populate reviews select
+          const reviewSelect = document.getElementById("review-dish-id");
+          reviewSelect.innerHTML = menuItems.map(item => `
+            <option value="${item.id}">${item.name}</option>
+          `).join('');
+
+          // Show review section if qualified
+          if (data.can_review) {
+            document.getElementById("restaurant-review-box").classList.remove("hidden");
+          }
+
+          // Render Dishes
+          const dishesContainer = document.getElementById("dishes-container");
+          if (menuItems.length === 0) {
+            dishesContainer.innerHTML = `<div class="text-center py-12 text-slate-400 text-xs italic">No menu items added yet by this provider.</div>`;
+            return;
+          }
+
+          dishesContainer.innerHTML = menuItems.map(item => {
+            const isVeg = item.category === "Veg";
+            const badgeColor = isVeg ? "bg-green-50 text-green-700 border-green-200" : "bg-red-50 text-red-700 border-red-200";
+            
+            // Render Dish Reviews
+            const reviewsListHTML = item.reviews && item.reviews.length > 0
+              ? `
+                <div class="mt-3 border-t border-slate-100 pt-3 space-y-2">
+                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Reviews:</div>
+                  ${item.reviews.map(r => `
+                    <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[11px] text-slate-600">
+                      <div class="flex justify-between items-center">
+                        <strong>${r.user_name}</strong>
+                        <span class="text-amber-500 font-bold">⭐ ${r.rating}</span>
+                      </div>
+                      <p class="mt-0.5 text-slate-500 italic">"${r.comment}"</p>
+                    </div>
+                  `).join('')}
+                </div>
+              `
+              : '';
+
+            return `
+              <div class="border border-slate-150 rounded-2xl p-4 flex flex-col justify-between bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                <div class="flex justify-between items-start gap-4">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[8px] font-bold px-1.5 py-0.5 rounded border ${badgeColor}">${item.category.toUpperCase()}</span>
+                      <strong class="text-sm text-slate-800">${item.name}</strong>
+                      <span class="text-xs text-amber-600 font-bold">₹${item.price_inr}</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1">${item.description || 'No description'}</p>
+                  </div>
+                  <button onclick="addToCart(${item.id})" class="bg-slate-850 hover:bg-slate-900 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1 shadow-sm">
+                    <span class="material-symbols-outlined text-xs">add</span>
+                    Add
+                  </button>
+                </div>
+                ${reviewsListHTML}
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Cart Management
+    function addToCart(itemId) {
+      const item = menuItems.find(m => m.id === itemId);
+      if (!item) return;
+
+      if (!cart[itemId]) {
+        cart[itemId] = { name: item.name, price: item.price_inr, qty: 0 };
+      }
+      cart[itemId].qty += 1;
+      updateCartDisplay();
+    }
+
+    function changeCartQty(itemId, offset) {
+      if (!cart[itemId]) return;
+      cart[itemId].qty += offset;
+      if (cart[itemId].qty <= 0) {
+        delete cart[itemId];
+      }
+      updateCartDisplay();
+    }
+
+    function updateCartDisplay() {
+      const list = document.getElementById("cart-items-list");
+      const totalText = document.getElementById("cart-total-amount");
+      const keys = Object.keys(cart);
+
+      if (keys.length === 0) {
+        list.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs italic">Your cart is empty. Add dishes from the menu to start!</div>`;
+        totalText.textContent = "₹0";
+        return;
+      }
+
+      let total = 0;
+      list.innerHTML = keys.map(k => {
+        const c = cart[k];
+        const sub = c.price * c.qty;
+        total += sub;
+        return `
+          <div class="flex justify-between items-center text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <div class="truncate max-w-[120px]">
+              <strong class="text-slate-800">${c.name}</strong>
+              <div class="text-[10px] text-slate-500">₹${c.price} x ${c.qty}</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="changeCartQty(${k}, -1)" class="w-6 h-6 rounded bg-slate-200 text-slate-800 hover:bg-slate-300 font-bold flex items-center justify-center">-</button>
+              <span class="font-bold w-4 text-center">${c.qty}</span>
+              <button onclick="changeCartQty(${k}, 1)" class="w-6 h-6 rounded bg-slate-200 text-slate-800 hover:bg-slate-300 font-bold flex items-center justify-center">+</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+      totalText.textContent = "₹" + total;
+    }
+
+    // Place Order
+    async function placeOrder() {
+      const keys = Object.keys(cart);
+      if (keys.length === 0) {
+        alert("Please add dishes to your cart first!");
+        return;
+      }
+
+      const btn = document.getElementById("place-order-btn");
+      if (btn.disabled) return;
+      btn.disabled = true;
+      const origText = btn.innerHTML;
+      btn.innerHTML = `<span class="material-symbols-outlined text-lg animate-spin">sync</span> Placing Order...`;
+
+      const total = parseFloat(document.getElementById("cart-total-amount").textContent.replace("₹", ""));
+      const items = keys.map(k => ({
+        menu_item_id: parseInt(k),
+        name: cart[k].name,
+        quantity: cart[k].qty,
+        price: cart[k].price
+      }));
+
+      const arrivalTime = parseInt(document.getElementById("cart-arrival-time").value) || 30;
+
+      const payload = {
+        restaurant_id: restId,
+        items: items,
+        total_amount: total,
+        payment_method: document.getElementById("cart-payment-method").value,
+        user_arrival_time_mins: arrivalTime
+      };
+
+      const headers = { "Content-Type": "application/json" };
+      const token = "{{ token }}";
+      if (token) {
+        headers["Authorization"] = token.startsWith("Bearer ") ? token : "Bearer " + token;
+      }
+
+      try {
+        const res = await fetch("/api/food/orders", {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          alert("Order placed successfully! Pre-paid via RoadBuddy wallet.");
+          window.location.href = `/my-trips/${tripId}/itinerary`;
+        } else {
+          const err = await res.json();
+          alert("Failed to place order: " + (err.detail || "Insufficient funds"));
+          btn.disabled = false;
+          btn.innerHTML = origText;
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Connection error occurred.");
+        btn.disabled = false;
+        btn.innerHTML = origText;
+      }
+    }
+
+    // Ratings
+    function setRating(rating) {
+      selectedRating = rating;
+      const stars = document.querySelectorAll("#star-selector span");
+      stars.forEach((s, idx) => {
+        if (idx < rating) {
+          s.classList.remove("text-slate-300");
+          s.classList.add("text-amber-400");
+        } else {
+          s.classList.remove("text-amber-400");
+          s.classList.add("text-slate-300");
+        }
+      });
+    }
+
+    // Submit Review
+    async function submitReview() {
+      const dishId = document.getElementById("review-dish-id").value;
+      const comment = document.getElementById("review-comment").value.trim();
+
+      if (!comment) {
+        alert("Please write a comment first.");
+        return;
+      }
+
+      const payload = {
+        menu_item_id: parseInt(dishId),
+        rating: selectedRating,
+        comment: comment
+      };
+
+      const headers = { "Content-Type": "application/json" };
+      const token = "{{ token }}";
+      if (token) {
+        headers["Authorization"] = token.startsWith("Bearer ") ? token : "Bearer " + token;
+      }
+
+      try {
+        const res = await fetch(`/api/food/restaurants/${restId}/reviews`, {
+          method: "POST",
+          headers: headers,
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          alert("Review submitted successfully!");
+          document.getElementById("review-comment").value = "";
+          loadMenu();
+        } else {
+          alert("Failed to submit review.");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Initialize
+    document.addEventListener("DOMContentLoaded", () => {
+      loadMenu();
+    });
+  </script>
+</body>
+</html>
