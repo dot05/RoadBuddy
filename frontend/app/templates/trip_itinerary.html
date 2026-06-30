@@ -210,7 +210,7 @@
 
         <!-- Restaurants List -->
         <div class="space-y-4">
-          <h4 class="text-xs font-bold text-on-surface uppercase tracking-wider">Discover Restaurants in {{ trip.destination }}</h4>
+          <h4 class="text-xs font-bold text-on-surface uppercase tracking-wider">Discover Restaurants Along Your Route</h4>
           <div id="restaurants-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div class="col-span-full text-center py-6 text-on-surface-variant text-xs">
               Loading restaurants...
@@ -341,7 +341,7 @@
       </div>
 
       <!-- Dish Reviews & Ratings Section -->
-      <div class="border-t border-slate-200 pt-6">
+      <div id="review-input-container" class="border-t border-slate-200 pt-6 hidden">
         <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Add a Review for a Dish</h4>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
           <div class="space-y-2">
@@ -673,16 +673,16 @@
   let selectedReviewRating = 5;
 
   async function loadRestaurants() {
-    const dest = "{{ trip.destination }}";
+    const routeCitiesQuery = [destinationCity, originCity, ...stops].join(",");
     const container = document.getElementById("restaurants-container");
     if (!container) return;
     try {
-      const res = await fetch(`/food/restaurants?city=${encodeURIComponent(dest)}`);
+      const res = await fetch(`/food/restaurants?city=${encodeURIComponent(routeCitiesQuery)}`);
       if (!res.ok) throw new Error("Failed to load restaurants");
       const data = await res.json();
       
       if (data.length === 0) {
-        container.innerHTML = `<div class="col-span-full text-center py-6 text-on-surface-variant text-xs italic">No restaurants found in ${dest}.</div>`;
+        container.innerHTML = `<div class="col-span-full text-center py-6 text-on-surface-variant text-xs italic">No restaurants found along your route.</div>`;
         return;
       }
       
@@ -698,9 +698,9 @@
             <p class="text-[10px] text-slate-500 leading-tight mt-1">${r.address}</p>
             <p class="text-[9px] text-slate-400">📞 ${r.contact_number || 'N/A'}</p>
           </div>
-          <button onclick="openFoodModal(${r.id})" class="mt-3 w-full bg-slate-800 hover:bg-slate-900 text-white text-[10px] font-semibold py-2 rounded transition-all">
+          <a href="/trips/{{ trip.id }}/restaurants/${r.id}" class="mt-3 w-full bg-slate-800 hover:bg-slate-900 text-white text-[10px] font-semibold py-2 rounded transition-all text-center block">
             View Menu & Order
-          </button>
+          </a>
         </div>
       `).join('');
     } catch (err) {
@@ -732,6 +732,9 @@
     
     const modal = document.getElementById("food-ordering-modal");
     modal.style.display = "flex";
+    document.body.style.overflow = "hidden";
+    const modalBody = modal.querySelector(".overflow-y-auto");
+    if (modalBody) modalBody.scrollTop = 0;
     
     try {
       const res = await fetch(`/food/restaurants/${restId}/menu`);
@@ -745,6 +748,12 @@
       
       // Populate reviews dropdown
       const select = document.getElementById("review-dish-select");
+      const reviewContainer = document.getElementById("review-input-container");
+      if (data.can_review) {
+        reviewContainer.classList.remove("hidden");
+      } else {
+        reviewContainer.classList.add("hidden");
+      }
       select.innerHTML = currentRestMenu.map(item => `
         <option value="${item.id}">${item.name}</option>
       `).join('');
@@ -941,6 +950,38 @@
     }
   }
 
+  function showToastNotification(message, type = "success") {
+    let container = document.getElementById("toast-container");
+    if (!container) {
+      container = document.createElement("div");
+      container.id = "toast-container";
+      container.className = "fixed top-5 right-5 z-[9999] flex flex-col gap-3 pointer-events-none";
+      document.body.appendChild(container);
+    }
+    
+    const toast = document.createElement("div");
+    toast.className = `p-4 rounded-2xl shadow-xl text-white font-medium text-xs flex items-center gap-2 transform translate-y-2 opacity-0 transition-all duration-300 pointer-events-auto max-w-sm ${
+      type === "success" ? "bg-emerald-600 border border-emerald-500" : "bg-rose-600 border border-rose-500"
+    }`;
+    toast.innerHTML = `
+      <span class="material-symbols-outlined">${type === 'success' ? 'check_circle' : 'cancel'}</span>
+      <span>${message}</span>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Trigger animation
+    setTimeout(() => {
+      toast.classList.remove("translate-y-2", "opacity-0");
+    }, 10);
+    
+    // Auto dismiss after 5 seconds
+    setTimeout(() => {
+      toast.classList.add("translate-y-2", "opacity-0");
+      setTimeout(() => toast.remove(), 300);
+    }, 5000);
+  }
+
   async function loadActiveFoodOrders() {
     const ordersDiv = document.getElementById("active-food-orders");
     const list = document.getElementById("active-orders-list");
@@ -951,8 +992,25 @@
       if (!res.ok) throw new Error("Failed to load orders");
       const data = await res.json();
       
-      // Filter active orders (paid, preparing, ready)
-      const active = data.filter(o => ["paid", "preparing", "ready"].includes(o.status));
+      // Show notification toast for accepted (preparing) or declined orders
+      data.forEach(o => {
+        if (o.status === "preparing") {
+          const key = `notified_order_${o.id}_preparing`;
+          if (!localStorage.getItem(key)) {
+            showToastNotification(`🎉 ${o.restaurant_name} accepted your order!`, "success");
+            localStorage.setItem(key, "true");
+          }
+        } else if (o.status === "declined") {
+          const key = `notified_order_${o.id}_declined`;
+          if (!localStorage.getItem(key)) {
+            showToastNotification(`❌ ${o.restaurant_name} rejected your order.`, "error");
+            localStorage.setItem(key, "true");
+          }
+        }
+      });
+
+      // Filter active orders (pending, paid, preparing, ready)
+      const active = data.filter(o => ["pending", "paid", "preparing", "ready"].includes(o.status));
       
       if (active.length === 0) {
         ordersDiv.classList.add("hidden");
@@ -962,8 +1020,9 @@
       ordersDiv.classList.remove("hidden");
       list.innerHTML = active.map(o => {
         let statusBadge = "";
-        if (o.status === "paid") statusBadge = `<span class="bg-blue-50 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded">PAID</span>`;
-        else if (o.status === "preparing") statusBadge = `<span class="bg-amber-50 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">PREPARING</span>`;
+        if (o.status === "pending") statusBadge = `<span class="bg-indigo-50 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">PENDING APPROVAL</span>`;
+        else if (o.status === "paid") statusBadge = `<span class="bg-sky-50 text-sky-700 text-[10px] font-bold px-2 py-0.5 rounded">ACCEPTED / PAID</span>`;
+        else if (o.status === "preparing") statusBadge = `<span class="bg-amber-50 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded animate-pulse">PREPARING ORDER</span>`;
         else if (o.status === "ready") statusBadge = `<span class="bg-green-50 text-green-700 text-[10px] font-bold px-2 py-0.5 rounded">READY FOR PICKUP</span>`;
         
         return `
@@ -1026,6 +1085,7 @@
 
   function closeFoodModal() {
     document.getElementById("food-ordering-modal").style.display = "none";
+    document.body.style.overflow = "";
   }
 
   document.addEventListener('DOMContentLoaded', () => {

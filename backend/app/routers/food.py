@@ -24,6 +24,7 @@ class OrderCreate(BaseModel):
     items: List[FoodOrderItem]
     total_amount: float
     payment_method: str = "prepaid"
+    user_arrival_time_mins: Optional[int] = 30
 
 class ArrivalUpdate(BaseModel):
     arrival_time_mins: int
@@ -49,25 +50,64 @@ class StatusUpdate(BaseModel):
 
 @router.get("/restaurants")
 def get_restaurants(city: str, db: Session = Depends(get_db)):
-    """List restaurants in a given city."""
-    city_clean = city.strip()
-    if not city_clean:
+    """List restaurants in a given city/route. Filters to only show real provider accounts."""
+    if not city.strip():
         return []
-    # Split by comma and check first token (e.g. "Jaipur" from "Jaipur, Rajasthan, India")
-    first_part = city_clean.split(",")[0].strip()
-    results = db.query(Restaurant).filter(
-        (Restaurant.city.ilike(f"%{first_part}%")) | 
-        (Restaurant.city.ilike(f"%{city_clean}%"))
-    ).all()
+    # Split by comma to support querying multiple cities along a route
+    query_parts = [c.strip() for c in city.split(",") if c.strip()]
+    from sqlalchemy import or_
+    filters = []
+    for part in query_parts:
+        # Check first token (e.g. "Jaipur" from "Jaipur, Rajasthan, India")
+        first_word = part.split(",")[0].strip()
+        filters.append(Restaurant.city.ilike(f"%{first_word}%"))
+        filters.append(Restaurant.city.ilike(f"%{part}%"))
+    # Base filter: Only show real restaurants with a linked provider ID who is actually a restaurant provider
+    from app.models.models import Provider
+    query = db.query(Restaurant).join(Provider, Restaurant.provider_id == Provider.id).filter(
+        Provider.service_type == "restaurant"
+    )
+    if filters:
+        query = query.filter(or_(*filters))
+    results = query.all()
     if not results:
-        # Fallback to checking if any restaurant city is a substring of the queried city
-        all_rests = db.query(Restaurant).all()
-        results = [r for r in all_rests if r.city.lower() in city_clean.lower() or city_clean.lower() in r.city.lower()]
+        # Fallback to checking if any provider restaurant city is a substring of the queried cities
+        all_provider_rests = db.query(Restaurant).join(Provider, Restaurant.provider_id == Provider.id).filter(
+            Provider.service_type == "restaurant"
+        ).all()
+        results = []
+        for r in all_provider_rests:
+            for part in query_parts:
+                if r.city.lower() in part.lower() or part.lower() in r.city.lower():
+                    results.append(r)
+                    break
     return results
 
 
+from fastapi import Request
+from jose import jwt, JWTError
+from app.core.config import settings
+
+def get_current_user_optional(request: Request) -> Optional[int]:
+    auth_header = request.headers.get("Authorization")
+    if not auth_header:
+        token = request.cookies.get("roadbuddy_token")
+        if not token:
+            return None
+    else:
+        try:
+            token = auth_header.split(" ")[1]
+        except IndexError:
+            return None
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        return int(payload.get("sub"))
+    except (JWTError, ValueError):
+        return None
+
+
 @router.get("/restaurants/{restaurant_id}/menu")
-def get_restaurant_menu(restaurant_id: int, db: Session = Depends(get_db)):
+def get_restaurant_menu(restaurant_id: int, request: Request, db: Session = Depends(get_db)):
     """Get the menu for a restaurant including items and reviews."""
     restaurant = db.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
     if not restaurant:
@@ -97,6 +137,20 @@ def get_restaurant_menu(restaurant_id: int, db: Session = Depends(get_db)):
             "rating": item.rating,
             "reviews": reviews_data
         })
+        
+    # Calculate can_review: reached hotel (has hotel booking) AND order is prepared/completed
+    can_review = False
+    user_id = get_current_user_optional(request)
+    if user_id is not None:
+        from app.models.models import HotelBooking
+        has_hotel = db.query(HotelBooking).filter(HotelBooking.user_id == user_id).first() is not None
+        has_completed_order = db.query(FoodOrder).filter(
+            FoodOrder.user_id == user_id,
+            FoodOrder.restaurant_id == restaurant_id,
+            FoodOrder.status.in_(["completed", "ready"])
+        ).first() is not None
+        can_review = has_hotel and has_completed_order
+
     return {
         "restaurant": {
             "id": restaurant.id,
@@ -107,7 +161,8 @@ def get_restaurant_menu(restaurant_id: int, db: Session = Depends(get_db)):
             "reviews_count": restaurant.reviews_count,
             "contact_number": restaurant.contact_number
         },
-        "menu_items": results
+        "menu_items": results,
+        "can_review": can_review
     }
 
 
@@ -131,9 +186,9 @@ def create_food_order(
         restaurant_id=data.restaurant_id,
         items_json=items_json,
         total_amount=data.total_amount,
-        status="paid",  # Prepaid is instantly marked as paid
+        status="pending",  # Initial status for provider to accept or decline
         preparation_time_mins=20,  # Default
-        user_arrival_time_mins=30,  # Default
+        user_arrival_time_mins=data.user_arrival_time_mins or 30,
         payment_method=data.payment_method
     )
     db.add(order)

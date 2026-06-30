@@ -260,7 +260,7 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
         
         # Calculate stats
         total_sales = sum(o.total_amount for o in orders if o.status != "cancelled")
-        active_orders = len([o for o in orders if o.status in ("paid", "preparing", "ready")])
+        active_orders = len([o for o in orders if o.status in ("pending", "paid", "preparing", "ready")])
         completed_orders = len([o for o in orders if o.status == "completed"])
         
         import json
