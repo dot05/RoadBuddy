@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: roadbuddy
+      POSTGRES_PASSWORD: roadbuddy
+      POSTGRES_DB: roadbuddy
+    ports:
+      - "5432:5432"
+    volumes:
+      - roadbuddy_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U roadbuddy"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: ../backend.Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    environment:
+      # Overrides whatever DATABASE_URL is in .env, so the app always
+      # talks to the 'db' service above instead of your local machine
+      DATABASE_URL: postgresql://roadbuddy:roadbuddy@db:5432/roadbuddy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  roadbuddy_pgdata:
