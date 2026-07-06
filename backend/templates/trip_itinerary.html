@@ -448,6 +448,10 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 
 <style>
+/* Hide the sidebar toggle button on the AI itinerary page */
+#sidebar-toggle {
+  display: none !important;
+}
 /* ── Trip Itinerary Mobile Responsive ── */
 @media (max-width: 768px) {
   /* Notification dropdown */
@@ -1402,6 +1406,56 @@
 <script>
   const IS_BACKEND = true;
   const API_BASE = "";
+
+  function showBookingConfirmation(title, message) {
+    if (typeof window.showBookingConfirmationModal === 'function') {
+      window.showBookingConfirmationModal(title, message);
+    } else {
+      const modal = document.getElementById("booking-success-modal");
+      const card = document.getElementById("booking-success-card");
+      if (modal) {
+        const titleEl = document.getElementById("success-modal-title");
+        const msgEl = document.getElementById("success-modal-message");
+        if (titleEl) titleEl.textContent = title;
+        if (msgEl) msgEl.innerHTML = message;
+        
+        modal.style.display = "flex";
+        setTimeout(() => {
+          modal.style.opacity = "1";
+          if (card) card.style.transform = "scale(1)";
+        }, 50);
+      } else {
+        alert(title + "\n\n" + message.replace(/<[^>]*>/g, ""));
+        if (typeof window.onSuccessModalClose === 'function') {
+          window.onSuccessModalClose();
+          window.onSuccessModalClose = null;
+        }
+      }
+    }
+  }
+
+  if (typeof window.closeSuccessModal !== 'function') {
+    window.closeSuccessModal = function() {
+      const modal = document.getElementById("booking-success-modal");
+      const card = document.getElementById("booking-success-card");
+      if (modal) {
+        modal.style.opacity = "0";
+        if (card) card.style.transform = "scale(0.9)";
+        setTimeout(() => {
+          modal.style.display = "none";
+          if (typeof window.onSuccessModalClose === 'function') {
+            window.onSuccessModalClose();
+            window.onSuccessModalClose = null;
+          }
+        }, 300);
+      } else {
+        if (typeof window.onSuccessModalClose === 'function') {
+          window.onSuccessModalClose();
+          window.onSuccessModalClose = null;
+        }
+      }
+    };
+  }
   
   const bookedHotel = {% if booked_hotel %} {
     hotel_name: "{{ booked_hotel.hotel_name | replace('"', '\\"') }}",
@@ -2930,7 +2984,7 @@
           window.onSuccessModalClose = () => {
             window.location.reload();
           };
-          window.showBookingConfirmationModal(
+          showBookingConfirmation(
             'Cab Booked Successfully! 🎉',
             isPrivateBooking 
               ? 'Your private cab has been booked. Your driver is preparing the vehicle.' 
@@ -2975,7 +3029,7 @@
           window.onSuccessModalClose = () => {
             window.location.reload();
           };
-          window.showBookingConfirmationModal(
+          showBookingConfirmation(
             'Ticket Booked Successfully! 🎉',
             `Your ticket reference ID is <strong>${data.id}</strong>. Check your inbox for booking details.`
           );
@@ -3112,7 +3166,8 @@
   let currentReviewRating = 5;
 
   async function loadRestaurants() {
-    const routeCitiesQuery = [destinationCity, originCity, ...stops].join(",");
+    const uniqueCities = Array.from(new Set([destinationCity, originCity, ...routeCitiesArray].filter(Boolean)));
+    const routeCitiesQuery = uniqueCities.join(",");
     const container = document.getElementById("restaurants-container");
     if (!container) return;
 
