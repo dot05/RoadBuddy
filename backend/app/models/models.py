@@ -82,6 +82,8 @@ class TripStop(Base):
     time_slot  = Column(String,  nullable=False)
     place_name = Column(String,  nullable=False)
     place_type = Column(String,  nullable=False)
+    description       = Column(String, nullable=True)
+    estimated_cost_inr = Column(Float, nullable=True)
 
     trip = relationship("Trip", back_populates="stops")
 
