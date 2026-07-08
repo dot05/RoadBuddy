@@ -814,6 +814,27 @@
     ">
       💰 <span class="btn-text">Split Expenses</span>
     </button>
+    {% if trip_id %}
+    <form method="POST" action="/end-trip/{{ trip_id }}" style="margin: 0; display: inline-block;" onsubmit="return confirm('Are you sure you want to end and save this trip? After ending, you will not be able to start/plan it again.')">
+      <button type="submit" style="
+        font-size: 13px;
+        font-weight: 700;
+        color: #ffffff;
+        background: #ef4444;
+        border: 1.5px solid #ef4444;
+        padding: 8px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s;
+        outline: none;
+      " onmouseover="this.style.background='#dc2626'; this.style.borderColor='#dc2626';" onmouseout="this.style.background='#ef4444'; this.style.borderColor='#ef4444';">
+        🏁 <span class="btn-text">End & Save Trip</span>
+      </button>
+    </form>
+    {% endif %}
     <a class="back-to-itinerary" href="{% if trip_id %}/my-trips/{{ trip_id }}/itinerary{% else %}/my-trips{% endif %}" style="
       font-size: 13px;
       font-weight: 700;
