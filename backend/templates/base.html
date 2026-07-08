@@ -25,7 +25,7 @@
     }
 
     /* Force Chatbot elements to render on top too */
-    .chatbot-fab {
+    .chat-badge, .chatbot-fab {
       z-index: 99999 !important;
     }
     .floating-chatbot-card {
@@ -309,6 +309,7 @@
       const chatbotCard = document.getElementById("floating-chatbot-card");
       const chatbotClose = document.getElementById("floating-chatbot-close");
 
+      console.log("initFloatingWidgets: chatbotFab=", chatbotFab, "chatbotCard=", chatbotCard, "chatbotClose=", chatbotClose);
       if (chatbotFab && chatbotCard && chatbotClose) {
         const solid = chatbotFab.querySelector(".chat-badge__solid");
         const nub = document.getElementById("chat-badge-nub");
@@ -336,12 +337,14 @@
         });
 
         chatbotFab.addEventListener("click", (e) => {
+          console.log("Chatbot FAB clicked!");
           e.stopPropagation();
           if (nub) nub.style.display = "none";
 
           chatbotFab.classList.add("morphing");
 
           setTimeout(() => {
+            console.log("Showing Chatbot Card (active class added)");
             chatbotCard.classList.add("active");
             document.body.classList.add("chatbot-open");
           }, 100);
@@ -513,7 +516,6 @@
     let hasDriverReachedPickup = false;
     
     let activeToastBookingId = null;
-    let currentUserId = null;
 
     function geocodeAddress(query) {
       if (!query) return Promise.resolve(null);
@@ -598,7 +600,7 @@
     }
 
     {% if user %}
-    currentUserId = "{{ user.id }}";
+    window.currentUserId = "{{ user.id }}";
     
     // Check for enroute bookings on page load and poll periodically
     window.addEventListener("DOMContentLoaded", () => {
@@ -613,9 +615,9 @@
     {% endif %}
 
     async function checkEnrouteBookings() {
-      if (!currentUserId) return;
+      if (!window.currentUserId) return;
       try {
-        const res = await fetch(`/api/provider/bookings/active-enroute?user_id=${currentUserId}`);
+        const res = await fetch(`/api/provider/bookings/active-enroute?user_id=${window.currentUserId}`);
         if (!res.ok) return;
         const bookings = await res.json();
         
