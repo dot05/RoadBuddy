@@ -214,30 +214,23 @@ def mock_own_vehicle(trip: TripCreate, vehicle_info: dict = None) -> dict:
     mileage_kmpl = vehicle_info.get("mileage_kmpl", 15.0) if vehicle_info else 15.0
     
     # Calculate road distance
-    lat1, lon1 = trip.origin_lat, trip.origin_lon
-    lat2, lon2 = trip.destination_lat, trip.destination_lon
-    dist = calculate_haversine_distance(lat1, lon1, lat2, lon2)
+    from app.services.fuel_calculator import calculate_fuel_cost, calculate_toll_cost, estimate_distance
     
-    # Calculate fuel cost one-way
-    fuel_price = 105.0
-    if fuel_type == "diesel":
-        fuel_price = 90.0
-    elif fuel_type == "cng":
-        fuel_price = 85.0
-
-    if fuel_type == "electric":
-        if mileage_kmpl > 50:
-            fuel_cost = (dist / mileage_kmpl) * 300.0
-        else:
-            fuel_cost = (dist / max(mileage_kmpl, 1.0)) * 8.0
-    else:
-        fuel_cost = (dist / max(mileage_kmpl, 1.0)) * fuel_price
-        
-    fuel_cost = round(fuel_cost, 2)
+    # Try route-specific distance lookup
+    dist = estimate_distance(trip.origin, trip.destination)
+    if not dist or dist == 300.0:
+        lat1, lon1 = trip.origin_lat, trip.origin_lon
+        lat2, lon2 = trip.destination_lat, trip.destination_lon
+        dist = calculate_haversine_distance(lat1, lon1, lat2, lon2)
+    
+    # Calculate fuel & toll using our unified calculator service
+    one_way_fuel = calculate_fuel_cost(dist, mileage_kmpl, fuel_type, city=trip.origin)
+    one_way_toll = calculate_toll_cost(dist, category, trip.origin, trip.destination)
+    
+    fuel_cost = one_way_fuel["cost_inr"]
     return_fuel_cost = fuel_cost
     
-    # Toll cost estimation
-    toll_cost = round(dist * 1.5, 2)
+    toll_cost = one_way_toll
     return_toll_cost = toll_cost
     
     # Parse dates to calculate total trip days
@@ -438,18 +431,47 @@ async def generate_itinerary(trip: TripCreate, vehicle_info: dict) -> TripOut:
         trip_uuid = uuid.uuid4().hex[:6]
         trip_id = f"trip_{trip.origin[:3].lower()}{trip.destination[:3].lower()}_{trip_uuid}"
         
-        fuel_cost = data.get("fuel_cost_inr", 0) + data.get("return_fuel_cost_inr", 0)
+        if trip.travel_mode == TravelMode.own_vehicle:
+            # Recalculate using our updated fuel_calculator logic to ensure 100% real values
+            from app.services.fuel_calculator import calculate_fuel_cost, calculate_toll_cost, estimate_distance
+            
+            route_dist = estimate_distance(trip.origin, trip.destination)
+            if not route_dist or route_dist == 300.0:
+                lat1, lon1 = trip.origin_lat, trip.origin_lon
+                lat2, lon2 = trip.destination_lat, trip.destination_lon
+                route_dist = calculate_haversine_distance(lat1, lon1, lat2, lon2)
+            
+            v_info = vehicle_info or {"fuel_type": "petrol", "category": "car", "mileage_kmpl": 15.0}
+            fuel_type = v_info.get("fuel_type", "petrol")
+            mileage = v_info.get("mileage_kmpl", 15.0)
+            category = v_info.get("category", "car")
+            
+            one_way_fuel = calculate_fuel_cost(route_dist, mileage, fuel_type, city=trip.origin)
+            one_way_toll = calculate_toll_cost(route_dist, category, trip.origin, trip.destination)
+            
+            fuel_cost = round(one_way_fuel["cost_inr"] * 2, 2)
+            toll_cost = round(one_way_toll * 2, 2)
+            total_distance = round(route_dist * 2, 2)
+            
+            hotel_cost = data.get("hotel_cost_inr", 0)
+            food_cost = data.get("food_cost_inr", 0)
+            total_estimated_cost = round(fuel_cost + toll_cost + hotel_cost + food_cost, 2)
+        else:
+            fuel_cost = data.get("fuel_cost_inr", 0) + data.get("return_fuel_cost_inr", 0)
+            toll_cost = data.get("toll_cost_inr", 0) + data.get("return_toll_cost_inr", 0)
+            total_distance = data.get("total_distance_km", 0)
+            total_estimated_cost = data.get("total_estimated_cost_inr", 0)
         
         return TripOut(
             id=trip_id,
             origin=trip.origin, destination=trip.destination, travel_mode=trip.travel_mode,
-            total_distance_km=data.get("total_distance_km", 0), stops=stops,
+            total_distance_km=total_distance, stops=stops,
             fuel_cost_inr=fuel_cost,
-            toll_cost_inr=data.get("toll_cost_inr", 0) + data.get("return_toll_cost_inr", 0),
+            toll_cost_inr=toll_cost,
             transport_fare_inr=0, return_fare_inr=0,
             hotel_cost_inr=data.get("hotel_cost_inr", 0),
             food_cost_inr=data.get("food_cost_inr", 0),
-            total_estimated_cost_inr=data.get("total_estimated_cost_inr", 0),
+            total_estimated_cost_inr=total_estimated_cost,
             ai_summary=data.get("ai_summary", ""),
         )
     except Exception as e:
