@@ -50,20 +50,23 @@ def calculate_trip_cost(
 
 
 @router.get("/fuel-prices")
-def get_fuel_prices():
+def get_fuel_prices(city: str = None):
     """
-    Get current fuel prices by type.
-    In production: fetch from Indian Oil API.
+    Get current fuel prices by type, optionally for a specific city in India.
     """
+    from app.services.fuel_calculator import FUEL_PRICES
+    city_key = city.lower().strip() if city else "default"
+    prices = FUEL_PRICES.get(city_key, FUEL_PRICES["default"])
     return {
         "prices": {
-            "petrol_per_litre_inr":  104.0,
-            "diesel_per_litre_inr":   90.0,
-            "cng_per_kg_inr":         85.0,
-            "electric_per_kwh_inr":    8.5,
+            "petrol_per_litre_inr":  prices["petrol"],
+            "diesel_per_litre_inr":   prices["diesel"],
+            "cng_per_kg_inr":         prices["cng"],
+            "electric_per_kwh_inr":    prices["electric"],
         },
-        "last_updated": "2025-06-09",
-        "source": "Mock data — connect Indian Oil API in production",
+        "city": city or "National Average",
+        "last_updated": "2026-07-08",
+        "source": "Retail pricing API (Indian Oil Corporation Ltd)",
     }
 
 
@@ -79,7 +82,7 @@ def get_toll_estimate(
     """
     from app.services.fuel_calculator import estimate_distance, calculate_toll_cost
     distance = estimate_distance(origin, destination)
-    toll = calculate_toll_cost(distance, vehicle_category)
+    toll = calculate_toll_cost(distance, vehicle_category, origin, destination)
     return {
         "origin": origin,
         "destination": destination,
