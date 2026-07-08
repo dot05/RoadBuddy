@@ -497,9 +497,10 @@ def book_vehicle(
     if vehicle.driver_included and seats_available_on_date < data.num_seats:
         raise HTTPException(status_code=400, detail="Not enough seats available")
 
-    if not vehicle.driver_included:
-        # Self-drive rental: use the fare sent from the frontend (which is days * daily fare)
-        total_fare = data.total_fare_inr if data.total_fare_inr is not None else (vehicle.fixed_fare_inr or 0.0)
+    if data.total_fare_inr is not None:
+        total_fare = data.total_fare_inr
+    elif not vehicle.driver_included:
+        total_fare = vehicle.fixed_fare_inr or 0.0
     elif vehicle.destination == "Private":
         # Private cab: fare = distance * price_per_km * total_seats
         dist = _calculate_geodesic_distance(data.pickup_location, data.dropoff_location)

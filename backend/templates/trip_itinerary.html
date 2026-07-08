@@ -1162,9 +1162,6 @@
 
 
 <style>
-  /* Hide chatbot widget only on this page */
-  .chatbot-fab { display: none !important; }
-  .floating-chatbot-card { display: none !important; }
 
   /* Tab / panel animations & hidden helper */
   .booking-panel.hidden { display: none !important; }
@@ -1501,7 +1498,7 @@
   const bookedFlight = {% if booked_flight %} {{ booked_flight | tojson | safe }} {% else %} null {% endif %};
   const bookedCab = {% if booked_cab %} {{ booked_cab | tojson | safe }} {% else %} null {% endif %};
 
-  const currentUserId = {% if user %}{{ user.id }}{% else %}null{% endif %};
+  window.currentUserId = window.currentUserId || {% if user %}{{ user.id }}{% else %}null{% endif %};
   
   const knownHotelCities = ["Jodhpur", "Shimla", "Manali", "Chennai", "Agra", "Kolkata", "Jaipur", "Goa", "Udaipur", "Delhi", "Hyderabad", "Bangalore", "Pune", "Mumbai"];
   
@@ -2047,7 +2044,7 @@
     
     try {
       const url = IS_BACKEND 
-        ? `/api/provider/services?origin=${encodeURIComponent(originCity)}&destination=${encodeURIComponent(destinationCity)}&travel_date=${encodeURIComponent(tripStartDate)}&user_id=${currentUserId}`
+        ? `/api/provider/services?origin=${encodeURIComponent(originCity)}&destination=${encodeURIComponent(destinationCity)}&travel_date=${encodeURIComponent(tripStartDate)}&user_id=${window.currentUserId}`
         : `/bookings/cabs/services?origin=${encodeURIComponent(originCity)}&destination=${encodeURIComponent(destinationCity)}`;
         
       const res = await fetch(url, {
@@ -2407,7 +2404,7 @@
       pickup_location: location,
       dropoff_location: location,
       selected_seats: "Self-Drive Rental",
-      user_id: currentUserId,
+      user_id: window.currentUserId,
       total_fare_inr: activeSelfDriveTotalRent
     };
 
@@ -2565,13 +2562,32 @@
     const dropoffSelect = document.getElementById("booking-dropoff-select");
     const privatePickupContainer = document.getElementById("private-cab-pickup-container");
     
-    pickupSelect.innerHTML = `<option value="${originCity}">${originCity} (Origin)</option>`;
-    dropoffSelect.innerHTML = `<option value="${destinationCity}">${destinationCity} (Destination)</option>`;
+    pickupSelect.innerHTML = "";
+    dropoffSelect.innerHTML = "";
     
-    stops.forEach(st => {
-      pickupSelect.innerHTML += `<option value="${st}">${st}</option>`;
-      dropoffSelect.innerHTML += `<option value="${st}">${st}</option>`;
-    });
+    if (s.cab_category === "company" && s.pickup_points && s.pickup_points.trim() !== "") {
+      const pPoints = s.pickup_points.split(",").map(p => p.trim()).filter(Boolean);
+      pPoints.forEach(p => {
+        pickupSelect.innerHTML += `<option value="${p}">${p}</option>`;
+      });
+    } else {
+      pickupSelect.innerHTML = `<option value="${originCity}">${originCity} (Origin)</option>`;
+      stops.forEach(st => {
+        pickupSelect.innerHTML += `<option value="${st}">${st}</option>`;
+      });
+    }
+    
+    if (s.cab_category === "company" && s.dropoff_points && s.dropoff_points.trim() !== "") {
+      const dPoints = s.dropoff_points.split(",").map(p => p.trim()).filter(Boolean);
+      dPoints.forEach(p => {
+        dropoffSelect.innerHTML += `<option value="${p}">${p}</option>`;
+      });
+    } else {
+      dropoffSelect.innerHTML = `<option value="${destinationCity}">${destinationCity} (Destination)</option>`;
+      stops.forEach(st => {
+        dropoffSelect.innerHTML += `<option value="${st}">${st}</option>`;
+      });
+    }
 
     if (isPrivateBooking) {
       pickupSelect.parentElement.style.display = "none";
@@ -2640,22 +2656,26 @@
     let layoutHTML = "";
     const vType = (vehicleType || "sedan").toLowerCase();
 
-    if (vType === "sedan" || vType === "hatchback" || totalSeats <= 4) {
-      // 4-Seater Car Layout
+    if (totalSeats <= 4) {
+      // Small car layout (2-3 columns)
       grid.style.gridTemplateColumns = "repeat(3, 1fr)";
       
-      // Row 1: Co-driver (Seat 1), Empty, Driver
-      layoutHTML += createSeatHTML("1", farePerSeat, bookedSeatsList);
+      // Row 1: Seat 1, Empty, Driver
+      if (totalSeats >= 1) layoutHTML += createSeatHTML("1", farePerSeat, bookedSeatsList);
+      else layoutHTML += `<div></div>`;
       layoutHTML += `<div></div>`;
       layoutHTML += `<div class="steering-wheel" style="width: 44px; height: 44px; background: #e2e8f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px;">🛞</div>`;
 
-      // Row 2: Back Passenger Seats (Seat 2, 3, 4)
-      layoutHTML += createSeatHTML("2", farePerSeat, bookedSeatsList);
-      layoutHTML += createSeatHTML("3", farePerSeat, bookedSeatsList);
-      layoutHTML += createSeatHTML("4", farePerSeat, bookedSeatsList);
+      // Row 2: Remaining seats
+      if (totalSeats >= 2) layoutHTML += createSeatHTML("2", farePerSeat, bookedSeatsList);
+      else layoutHTML += `<div></div>`;
+      if (totalSeats >= 3) layoutHTML += createSeatHTML("3", farePerSeat, bookedSeatsList);
+      else layoutHTML += `<div></div>`;
+      if (totalSeats >= 4) layoutHTML += createSeatHTML("4", farePerSeat, bookedSeatsList);
+      else layoutHTML += `<div></div>`;
       
-    } else if (vType === "suv" || (totalSeats > 4 && totalSeats <= 7)) {
-      // 6-Seater SUV Layout
+    } else if (totalSeats > 4 && totalSeats <= 7) {
+      // SUV layout
       grid.style.gridTemplateColumns = "repeat(3, 1fr)";
       
       // Row 1: Front Co-driver, Empty, Driver
@@ -2668,10 +2688,13 @@
       layoutHTML += createSeatHTML("3", farePerSeat, bookedSeatsList);
       layoutHTML += createSeatHTML("4", farePerSeat, bookedSeatsList);
 
-      // Row 3: Back seats (5, 6)
-      layoutHTML += createSeatHTML("5", farePerSeat, bookedSeatsList);
-      layoutHTML += `<div></div>`;
-      layoutHTML += createSeatHTML("6", farePerSeat, bookedSeatsList);
+      // Row 3: Back seats (5, 6, 7) — only if they exist
+      if (totalSeats >= 5) layoutHTML += createSeatHTML("5", farePerSeat, bookedSeatsList);
+      else layoutHTML += `<div></div>`;
+      if (totalSeats >= 7) layoutHTML += createSeatHTML("6", farePerSeat, bookedSeatsList);
+      else layoutHTML += `<div></div>`;
+      if (totalSeats >= 6) layoutHTML += createSeatHTML(totalSeats >= 7 ? "7" : "6", farePerSeat, bookedSeatsList);
+      else layoutHTML += `<div></div>`;
       
     } else {
       // Bus / Traveller Layout
@@ -3061,7 +3084,7 @@
           : document.getElementById("booking-pickup-select").value,
         dropoff_location: document.getElementById("booking-dropoff-select").value,
         selected_seats: isPrivateBooking ? "Whole Vehicle" : selectedSeats.join(", "),
-        user_id: currentUserId,
+        user_id: window.currentUserId,
         total_fare_inr: isPrivateBooking ? activeBookFare : selectedSeats.length * activeBookFare
       };
       
@@ -3674,11 +3697,13 @@
     const isBackend = window.location.port === "8000";
     const foodUrl = isBackend ? "/api/food/my-orders" : "/food/my-orders";
     const cabUrl = isBackend ? "/api/provider/bookings/user" : "/provider/bookings/user";
+    const enrouteUrl = `/api/provider/bookings/active-enroute?user_id=${window.currentUserId}`;
 
     try {
-      const [foodRes, cabRes] = await Promise.all([
+      const [foodRes, cabRes, enrouteRes] = await Promise.all([
         fetch(foodUrl, { headers: getHeaders() }).catch(() => null),
-        fetch(cabUrl, { headers: getHeaders() }).catch(() => null)
+        fetch(cabUrl, { headers: getHeaders() }).catch(() => null),
+        fetch(enrouteUrl, { headers: getHeaders() }).catch(() => null)
       ]);
 
       let foodOrders = [];
@@ -3691,7 +3716,34 @@
         cabBookings = await cabRes.json();
       }
 
+      let enrouteBookings = [];
+      if (enrouteRes && enrouteRes.ok) {
+        enrouteBookings = await enrouteRes.json();
+      }
+
       const notifications = [];
+      
+      // Active enroute and handover bookings (high priority, show first)
+      enrouteBookings.forEach(b => {
+        let title = "Your driver is on the way!";
+        let msg = `Your cab <strong>${b.vehicle_name || 'xyz'}</strong> is ready and out to pick you.`;
+        if (b.navigation_status === "trip_started") {
+          title = "Your vehicle has started!";
+          msg = `Vehicle <strong>${b.vehicle_name || 'xyz'}</strong> is started from its route, get ready and available at the pickup point.`;
+        } else if (b.selected_seats === "Self-Drive Rental") {
+          title = "Self-Drive Handover";
+          msg = `Your vehicle <strong>${b.vehicle_name || 'xyz'}</strong> for self drive is out to your location to handover the vehicle.`;
+        }
+        
+        notifications.push({
+          id: `enroute_${b.id}`,
+          icon: b.selected_seats === "Self-Drive Rental" ? "directions_car" : "local_taxi",
+          title: title,
+          message: msg,
+          time: b.created_at || new Date().toISOString(),
+          type: "success"
+        });
+      });
       
       // Food orders: pending, preparing, ready, completed, declined
       foodOrders.forEach(o => {
