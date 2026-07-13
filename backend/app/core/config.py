@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     brevo_api_key: str = ""
     brevo_sender_email: str = "kunalsinghtanwar355@gmail.com"
 
+    # Razorpay Payment Gateway API
+    razorpay_key_id: str = ""
+    razorpay_key_secret: str = ""
+
     # JWT Auth
     secret_key: str
     algorithm: str = "HS256"

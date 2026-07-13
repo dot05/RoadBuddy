@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
-
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
@@ -1021,6 +1021,83 @@
 </div>
 
 <script>
+  function startRazorpayCheckout(amountInr, bookingType, details, successCallback) {
+    const headers = { 'Content-Type': 'application/json' };
+    const token = "{{ token }}";
+    if (token) {
+      headers['Authorization'] = 'Bearer ' + token;
+    }
+
+    fetch("/api/payment/create-order", {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({
+        amount_inr: amountInr,
+        booking_type: bookingType,
+        details: details
+      })
+    })
+    .then(async res => {
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Could not create payment order");
+      }
+      return res.json();
+    })
+    .then(orderData => {
+      const options = {
+        "key": orderData.key_id,
+        "amount": orderData.amount,
+        "currency": orderData.currency,
+        "name": "RoadBuddy AI",
+        "description": `${bookingType.toUpperCase()} Booking Payment`,
+        "order_id": orderData.order_id,
+        "handler": function (response) {
+          fetch("/api/payment/verify", {
+            method: "POST",
+            headers: headers,
+            body: JSON.stringify({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              booking_type: bookingType,
+              details: details
+            })
+          })
+          .then(async verifyRes => {
+            if (!verifyRes.ok) {
+              const err = await verifyRes.json().catch(() => ({}));
+              throw new Error(err.detail || "Payment verification failed");
+            }
+            return verifyRes.json();
+          })
+          .then(verifyData => {
+            successCallback(verifyData);
+          })
+          .catch(err => {
+            alert("Payment Verification Failed: " + err.message);
+            window.location.reload();
+          });
+        },
+        "prefill": {
+          "name": "{{ user.name if user else '' }}",
+          "email": "{{ user.email if user else '' }}",
+          "contact": "{{ user.phone if user else '' }}"
+        },
+        "theme": {
+          "color": "#10b981"
+        }
+      };
+      
+      const rzp = new Razorpay(options);
+      rzp.open();
+    })
+    .catch(err => {
+      alert("Payment Error: " + err.message);
+      window.location.reload();
+    });
+  }
+
   // ─── STATE ───────────────────────────────────────────────
   const currentUserId = parseInt("{{ user.id }}");
   
@@ -2864,7 +2941,7 @@
     const bookingBtn = document.getElementById("btn-confirm-seats");
     if (bookingBtn) {
       bookingBtn.disabled = true;
-      bookingBtn.textContent = "Booking ticket...";
+      bookingBtn.textContent = "Processing Payment...";
     }
 
     const includeReturn = document.getElementById("booking-include-return-checkbox").checked;
@@ -2891,151 +2968,135 @@
       selClass = selectedTransitClass;
     }
 
-    const payload = {
+    const opt = loadedTransitOptions.find(o => o.id === activeTransitOptionId);
+    const singleFare = opt ? opt.fare_inr : 0;
+    const totalFareText = document.getElementById("selected-seats-total").textContent;
+    const totalFare = parseFloat(totalFareText.replace(/[^0-9.]/g, '')) || (includeReturn ? (singleFare * 2) : singleFare);
+
+    const details = {
       transport_option_id: activeTransitOptionId,
       passenger_name: passengerName,
       travel_date: travelDate,
       include_return: includeReturn,
       return_date: returnDate,
+      going_fare_inr: singleFare,
+      return_fare_inr: includeReturn ? singleFare : 0,
+      total_fare_inr: totalFare,
       selected_seats: selSeats,
       travel_class: selClass
     };
 
-    try {
-      const res = await fetch(`/api/transport/book`, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer {{ token }}'
-        },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        closeSeatModal();
-        window.showBookingConfirmationModal(
-          'Ticket Booked Successfully! 🎉',
-          `Your ticket reference ID is <strong>${data.id}</strong>. Check your inbox for booking details.`
-        );
+    startRazorpayCheckout(totalFare, "transit", details, (verifyData) => {
+      closeSeatModal();
+      window.showBookingConfirmationModal(
+        'Ticket Booked Successfully! 🎉',
+        `Your ticket reference ID is <strong>${verifyData.booking_id}</strong>. Check your inbox for booking details.`
+      );
 
-        // Find the booked option details to display the ticket
-        const opt = loadedTransitOptions.find(o => o.id === activeTransitOptionId);
-        if (opt) {
-          const colors = { bus: '#f59e0b', train: '#6366f1', flight: '#0ea5e9' };
-          const themeColor = colors[opt.mode || currentMode] || '#1d9e75';
-          const wrap = document.getElementById('directions-wrap');
-          const totalFareText = document.getElementById("selected-seats-total").textContent;
-          
-          let inclusionsHTML = "";
-          if (opt.complimentary_items && opt.complimentary_items.length > 0) {
-            inclusionsHTML = `
-              <div style="margin-top: 12px; border-top: 1px dashed #e2e8f0; padding-top: 12px; text-align: left;">
-                <div style="font-size: 10px; color: #64748b; text-transform: uppercase; margin-bottom: 6px; font-weight: 700; letter-spacing: 0.5px;">Inclusions & Amenities</div>
-                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
-                  ${opt.complimentary_items.map(item => `
-                    <span style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">🎁 ${item}</span>
-                  `).join('')}
-                </div>
-              </div>
-            `;
-          }
-          
-          wrap.innerHTML = `
-            <div class="booking-ticket-card" style="background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; overflow: hidden; margin-top: 12px;">
-              <div style="background: ${themeColor}; color: #fff; padding: 16px; text-align: center; position: relative;">
-                <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Boarding Pass / Ticket</div>
-                <div style="font-size: 18px; font-weight: 800; margin-top: 4px;">RoadBuddy Transit</div>
-                <!-- Ticket circles decorative cutouts -->
-                <div style="position: absolute; bottom: -8px; left: -8px; width: 16px; height: 16px; background: #f8fafc; border-radius: 50%;"></div>
-                <div style="position: absolute; bottom: -8px; right: -8px; width: 16px; height: 16px; background: #f8fafc; border-radius: 50%;"></div>
-              </div>
-              <div style="padding: 16px; background: #fff; position: relative;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                  <div>
-                    <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Operator</div>
-                    <div style="font-size: 14px; font-weight: 700; color: #0f172a;">${opt.operator}</div>
-                  </div>
-                  <div style="text-align: right;">
-                    <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Reference ID</div>
-                    <div style="font-size: 12px; font-weight: 700; color: ${themeColor}; font-family: monospace;">RB-${data.id}</div>
-                  </div>
-                </div>
-                
-                <div style="border-top: 1px dashed #e2e8f0; margin: 12px 0;"></div>
-                
-                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                  <div>
-                    <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Passenger</div>
-                    <div style="font-size: 13px; font-weight: 600; color: #0f172a;">${passengerName}</div>
-                  </div>
-                  <div style="text-align: right;">
-                    <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Travel Date</div>
-                    <div style="font-size: 13px; font-weight: 600; color: #0f172a;">${travelDate}</div>
-                  </div>
-                </div>
-                
-                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                  <div>
-                    <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">From</div>
-                    <div style="font-size: 13px; font-weight: 600; color: #0f172a;">${opt.origin_station_name || opt.origin}</div>
-                  </div>
-                  <div style="text-align: right;">
-                    <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">To</div>
-                    <div style="font-size: 13px; font-weight: 600; color: #0f172a;">${opt.destination_station_name || opt.destination}</div>
-                  </div>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                  <div>
-                    <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Class</div>
-                    <div style="font-size: 13px; font-weight: 600; color: #0f172a;">${selClass || 'Standard'}</div>
-                  </div>
-                  <div style="text-align: right;">
-                    <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Seat / Berth</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #1d9e75;">${selSeats || 'Auto-Assigned'}</div>
-                  </div>
-                </div>
-
-                <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                  <div>
-                    <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Timing</div>
-                    <div style="font-size: 13px; font-weight: 600; color: #0f172a;">Departs: ${opt.departure_time}</div>
-                  </div>
-                  <div style="text-align: right;">
-                    <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Total Fare</div>
-                    <div style="font-size: 13px; font-weight: 700; color: #0d9488;">${totalFareText}</div>
-                  </div>
-                </div>
-
-                ${inclusionsHTML}
-
-                <div style="border-top: 1px dashed #e2e8f0; margin: 12px 0; position: relative;">
-                  <!-- Ticket circles decorative cutouts -->
-                  <div style="position: absolute; top: -8px; left: -24px; width: 16px; height: 16px; background: #f8fafc; border-radius: 50%;"></div>
-                  <div style="position: absolute; top: -8px; right: -24px; width: 16px; height: 16px; background: #f8fafc; border-radius: 50%;"></div>
-                </div>
-                
-                <div style="text-align: center; margin-top: 10px;">
-                  <div style="font-size: 12px; color: #15803d; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 6px 12px; border-radius: 8px; width: 100%; justify-content: center;">
-                    <span>✅ Ticket Active & Confirmed</span>
-                  </div>
-                </div>
+      if (opt) {
+        const colors = { bus: '#f59e0b', train: '#6366f1', flight: '#0ea5e9' };
+        const themeColor = colors[opt.mode || currentMode] || '#1d9e75';
+        const wrap = document.getElementById('directions-wrap');
+        
+        let inclusionsHTML = "";
+        if (opt.complimentary_items && opt.complimentary_items.length > 0) {
+          inclusionsHTML = `
+            <div style="margin-top: 12px; border-top: 1px dashed #e2e8f0; padding-top: 12px; text-align: left;">
+              <div style="font-size: 10px; color: #64748b; text-transform: uppercase; margin-bottom: 6px; font-weight: 700; letter-spacing: 0.5px;">Inclusions & Amenities</div>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                ${opt.complimentary_items.map(item => `
+                  <span style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">🎁 ${item}</span>
+                `).join('')}
               </div>
             </div>
           `;
         }
-      } else {
-        const err = await res.json().catch(() => ({}));
-        alert('Booking failed: ' + (err.detail || res.status));
+        
+        wrap.innerHTML = `
+          <div class="booking-ticket-card" style="background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; overflow: hidden; margin-top: 12px;">
+            <div style="background: ${themeColor}; color: #fff; padding: 16px; text-align: center; position: relative;">
+              <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.9;">Boarding Pass / Ticket</div>
+              <div style="font-size: 18px; font-weight: 800; margin-top: 4px;">RoadBuddy Transit</div>
+              <!-- Ticket circles decorative cutouts -->
+              <div style="position: absolute; bottom: -8px; left: -8px; width: 16px; height: 16px; background: #f8fafc; border-radius: 50%;"></div>
+              <div style="position: absolute; bottom: -8px; right: -8px; width: 16px; height: 16px; background: #f8fafc; border-radius: 50%;"></div>
+            </div>
+            <div style="padding: 16px; background: #fff; position: relative;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div>
+                  <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Operator</div>
+                  <div style="font-size: 14px; font-weight: 700; color: #0f172a;">${opt.operator}</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Reference ID</div>
+                  <div style="font-size: 12px; font-weight: 700; color: ${themeColor}; font-family: monospace;">RB-${verifyData.booking_id}</div>
+                </div>
+              </div>
+              
+              <div style="border-top: 1px dashed #e2e8f0; margin: 12px 0;"></div>
+              
+              <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                <div>
+                  <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Passenger</div>
+                  <div style="font-size: 13px; font-weight: 600; color: #0f172a;">${passengerName}</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Travel Date</div>
+                  <div style="font-size: 13px; font-weight: 600; color: #0f172a;">${travelDate}</div>
+                </div>
+              </div>
+              
+              <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                <div>
+                  <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">From</div>
+                  <div style="font-size: 13px; font-weight: 600; color: #0f172a;">${opt.origin_station_name || opt.origin}</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">To</div>
+                  <div style="font-size: 13px; font-weight: 600; color: #0f172a;">${opt.destination_station_name || opt.destination}</div>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                <div>
+                  <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Class</div>
+                  <div style="font-size: 13px; font-weight: 600; color: #0f172a;">${selClass || 'Standard'}</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Seat / Berth</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #1d9e75;">${selSeats || 'Auto-Assigned'}</div>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                <div>
+                  <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Timing</div>
+                  <div style="font-size: 13px; font-weight: 600; color: #0f172a;">Departs: ${opt.departure_time}</div>
+                </div>
+                <div style="text-align: right;">
+                  <div style="font-size: 10px; color: #64748b; text-transform: uppercase;">Total Fare</div>
+                  <div style="font-size: 13px; font-weight: 700; color: #0d9488;">${totalFareText}</div>
+                </div>
+              </div>
+
+              ${inclusionsHTML}
+
+              <div style="border-top: 1px dashed #e2e8f0; margin: 12px 0; position: relative;">
+                <!-- Ticket circles decorative cutouts -->
+                <div style="position: absolute; top: -8px; left: -24px; width: 16px; height: 16px; background: #f8fafc; border-radius: 50%;"></div>
+                <div style="position: absolute; top: -8px; right: -24px; width: 16px; height: 16px; background: #f8fafc; border-radius: 50%;"></div>
+              </div>
+              
+              <div style="text-align: center; margin-top: 10px;">
+                <div style="font-size: 12px; color: #15803d; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; background: #f0fdf4; border: 1px solid #bbf7d0; padding: 6px 12px; border-radius: 8px; width: 100%; justify-content: center;">
+                  <span>✅ Ticket Active & Confirmed</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
       }
-    } catch (e) {
-      alert('Booking failed: network error');
-    } finally {
-      if (bookingBtn) {
-        bookingBtn.disabled = false;
-        bookingBtn.textContent = "Confirm & Book";
-      }
-    }
+    });
   }
 
   async function submitSeatBooking() {
@@ -3123,10 +3184,12 @@
     const bookingBtn = document.getElementById("btn-confirm-seats");
     if (bookingBtn) {
       bookingBtn.disabled = true;
-      bookingBtn.textContent = "Booking ticket...";
+      bookingBtn.textContent = "Processing Payment...";
     }
 
-    const payload = {
+    const totalFare = isPrivateBooking ? seatPricePerSeat : (selectedSeats.length * seatPricePerSeat);
+
+    const details = {
       vehicle_id: activeBookingVehicleId,
       passenger_name: passengerName,
       passenger_phone: passengerPhone,
@@ -3137,38 +3200,21 @@
       pickup_location: finalPickupLocation,
       dropoff_location: finalDropoffLocation,
       selected_seats: isPrivateBooking ? "Whole Vehicle" : selectedSeats.join(", "),
-      user_id: currentUserId
+      total_fare_inr: totalFare
     };
 
-    try {
-      const res = await fetch('/api/provider/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (res.ok) {
-        closeSeatModal();
-        window.onSuccessModalClose = () => {
-          getRoutes();
-        };
-        window.showBookingConfirmationModal(
-          'Cab Booked Successfully! 🎉',
-          isPrivateBooking 
-            ? 'Your private cab has been booked. Your driver is preparing the vehicle.' 
-            : `Your cab seat ticket is confirmed for seats: <strong>${selectedSeats.join(", ")}</strong>.`
-        );
-      } else {
-        const err = await res.json().catch(() => ({}));
-        alert('Booking failed: ' + (err.detail || res.status));
-      }
-    } catch (e) {
-      alert('Booking failed: network error');
-    } finally {
-      if (bookingBtn) {
-        bookingBtn.disabled = false;
-        bookingBtn.textContent = "Confirm & Book";
-      }
-    }
+    startRazorpayCheckout(totalFare, "cab", details, (verifyData) => {
+      closeSeatModal();
+      window.onSuccessModalClose = () => {
+        getRoutes();
+      };
+      window.showBookingConfirmationModal(
+        'Cab Booked Successfully! 🎉',
+        isPrivateBooking 
+          ? 'Your private cab has been booked. Your driver is preparing the vehicle.' 
+          : `Your cab seat ticket is confirmed for seats: <strong>${selectedSeats.join(", ")}</strong>.`
+      );
+    });
   }
 
   function closeSeatModal() {
