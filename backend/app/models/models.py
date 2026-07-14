@@ -214,8 +214,12 @@ class Hotel(Base):
     image_url     = Column(String, nullable=True)
     created_at    = Column(DateTime, server_default=func.now())
  
+    avg_rating    = Column(Float, default=0.0)
+    total_reviews = Column(Integer, default=0)
+
     bookings = relationship("HotelBooking", back_populates="hotel")
- 
+    reviews  = relationship("HotelReview", back_populates="hotel", cascade="all, delete-orphan")
+
     @property
     def rooms_available(self):
         return max(self.total_rooms - self.rooms_booked, 0)
@@ -236,6 +240,20 @@ class HotelBooking(Base):
     created_at    = Column(DateTime, server_default=func.now())
  
     hotel = relationship("Hotel", back_populates="bookings")
+    user  = relationship("User")
+
+
+class HotelReview(Base):
+    __tablename__ = "hotel_reviews"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    hotel_id    = Column(Integer, ForeignKey("hotels.id"), nullable=False)
+    user_id     = Column(Integer, ForeignKey("users.id"), nullable=False)
+    rating      = Column(Integer, nullable=False)
+    review_text = Column(String, nullable=False)
+    created_at  = Column(DateTime, server_default=func.now())
+
+    hotel = relationship("Hotel", back_populates="reviews")
     user  = relationship("User")
  
  
@@ -424,11 +442,14 @@ class ProviderVehicle(Base):
     pickup_points   = Column(String, nullable=True)
     dropoff_points  = Column(String, nullable=True)
     service_dates   = Column(String, nullable=True)
+    avg_rating      = Column(Float, default=0.0)
+    total_reviews   = Column(Integer, default=0)
     created_at      = Column(DateTime, server_default=func.now())
  
     provider = relationship("Provider", back_populates="vehicles")
     bookings = relationship("ProviderBooking", back_populates="vehicle")
     vehicle_asset = relationship("ProviderVehicleAsset")
+    reviews  = relationship("VehicleReview", back_populates="vehicle", cascade="all, delete-orphan")
  
     @property
     def seats_booked_today(self):
@@ -567,3 +588,17 @@ class FoodReview(Base):
 
     menu_item = relationship("MenuItem", back_populates="reviews")
     user = relationship("User")
+
+
+class VehicleReview(Base):
+    __tablename__ = "vehicle_reviews"
+
+    id          = Column(Integer, primary_key=True, index=True)
+    vehicle_id  = Column(Integer, ForeignKey("provider_vehicles.id"), nullable=False)
+    user_id     = Column(Integer, ForeignKey("users.id"), nullable=False)
+    rating      = Column(Integer, nullable=False)
+    review_text = Column(String, nullable=False)
+    created_at  = Column(DateTime, server_default=func.now())
+
+    vehicle = relationship("ProviderVehicle", back_populates="reviews")
+    user    = relationship("User")

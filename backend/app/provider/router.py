@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.models import Provider, ProviderVehicle, ProviderBooking, User, ProviderVehicleAsset
+from app.models.models import Provider, ProviderVehicle, ProviderBooking, User, ProviderVehicleAsset, VehicleReview
 from app.provider.schemas import (
     ProviderRegister, ProviderLogin, ProviderOut, ProviderUpdate,
     VehicleCreate, VehicleUpdate, VehicleOut,
@@ -18,6 +18,7 @@ from app.provider.schemas import (
     CabServiceResult,
     VehicleAssetCreate, VehicleAssetOut,
     ProviderPassengerDetail, ProviderVehicleBookingDetails,
+    VehicleReviewCreate, VehicleReviewOut,
 )
 from app.provider.auth import (
     hash_password, verify_password,
@@ -377,6 +378,8 @@ def list_cab_services(
             pickup_points=v.pickup_points,
             dropoff_points=v.dropoff_points,
             service_dates=v.service_dates,
+            avg_rating=v.avg_rating if v.avg_rating is not None else 0.0,
+            total_reviews=v.total_reviews if v.total_reviews is not None else 0,
         ))
     return results
 
@@ -940,5 +943,61 @@ def get_booking_status(
         "vehicle_name": booking.vehicle.vehicle_name if booking.vehicle else "Vehicle",
         "vehicle_type": booking.vehicle.vehicle_type if booking.vehicle else "cab"
     }
+
+
+@router.get("/vehicles/{vehicle_id}/reviews", response_model=list[VehicleReviewOut])
+def get_vehicle_reviews(
+    vehicle_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    reviews = db.query(VehicleReview).filter(VehicleReview.vehicle_id == vehicle_id).order_by(VehicleReview.id.desc()).all()
+    return [
+        VehicleReviewOut(
+            id=r.id,
+            vehicle_id=r.vehicle_id,
+            rating=r.rating,
+            review_text=r.review_text,
+            user_name=r.user.name if r.user else "Anonymous",
+            created_at=r.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        )
+        for r in reviews
+    ]
+
+
+@router.post("/vehicles/{vehicle_id}/reviews", status_code=201)
+def post_vehicle_review(
+    vehicle_id: int,
+    review_data: VehicleReviewCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user)
+):
+    vehicle = db.query(ProviderVehicle).filter(ProviderVehicle.id == vehicle_id).first()
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="Vehicle not found")
+
+    user_id = int(current_user["user_id"])
+
+    # Save the review
+    review = VehicleReview(
+        vehicle_id=vehicle_id,
+        user_id=user_id,
+        rating=review_data.rating,
+        review_text=review_data.review_text
+    )
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+
+    # Recalculate average rating & total reviews
+    all_reviews = db.query(VehicleReview).filter(VehicleReview.vehicle_id == vehicle_id).all()
+    total = len(all_reviews)
+    avg = sum(r.rating for r in all_reviews) / total if total > 0 else 0.0
+
+    vehicle.avg_rating = round(avg, 1)
+    vehicle.total_reviews = total
+    db.commit()
+
+    return {"status": "success", "avg_rating": vehicle.avg_rating, "total_reviews": vehicle.total_reviews}
 
 
