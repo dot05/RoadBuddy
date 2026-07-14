@@ -187,6 +187,8 @@ class CabServiceResult(BaseModel):
     pickup_points: Optional[str] = None
     dropoff_points: Optional[str] = None
     service_dates: Optional[str] = None
+    avg_rating: Optional[float] = 0.0
+    total_reviews: Optional[int] = 0
 
     class Config:
         from_attributes = True
@@ -256,6 +258,23 @@ class ProviderVehicleBookingDetails(BaseModel):
     is_public: bool
     booked_seats: list[str]
     passengers: list[ProviderPassengerDetail]
+
+    class Config:
+        from_attributes = True
+
+
+class VehicleReviewCreate(BaseModel):
+    rating: int
+    review_text: str
+
+
+class VehicleReviewOut(BaseModel):
+    id: int
+    vehicle_id: int
+    rating: int
+    review_text: str
+    user_name: str
+    created_at: str
 
     class Config:
         from_attributes = True

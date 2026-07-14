@@ -372,7 +372,7 @@
 </div>
 
 <!-- Edit Trip Modal -->
-<div id="edit-trip-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+<div id="edit-trip-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[9999] p-4">
   <div id="edit-trip-modal-card" class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full overflow-hidden text-left animate-fade-in-up">
     <!-- Header -->
     <div class="bg-slate-900 text-white p-6 relative">
@@ -1034,7 +1034,7 @@
 </div>
 
 <!-- Hotel Booking Modal -->
-<div id="hotel-booking-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+<div id="hotel-booking-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[9999] p-4">
   <div id="hotel-booking-modal-card" class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-md w-full overflow-hidden text-left animate-fade-in-up">
     <!-- Header -->
     <div class="bg-slate-900 text-white p-6 relative">
@@ -1097,8 +1097,127 @@
   </div>
 </div>
 
+<!-- Hotel Reviews & Ratings Modal -->
+<div id="hotel-reviews-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[9999] p-4">
+  <div id="hotel-reviews-modal-card" class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full overflow-hidden text-left animate-fade-in-up flex flex-col max-h-[85vh]">
+    <!-- Header -->
+    <div class="bg-slate-900 text-white p-6 relative flex-shrink-0">
+      <h3 class="text-xl font-bold" id="reviews-modal-title">Hotel Reviews</h3>
+      <p class="text-white/70 text-xs mt-1" id="reviews-modal-subtitle">Ratings & Comments</p>
+      <button onclick="closeHotelReviewsModal()" class="absolute top-6 right-6 text-white/70 hover:text-white">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    
+    <!-- Body (scrollable) -->
+    <div class="overflow-y-auto p-6 space-y-6 flex-grow flex flex-col">
+      <!-- Write a Review Form -->
+      <form id="hotel-review-form" onsubmit="submitHotelReview(event)" class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Write a Review</h4>
+        <input type="hidden" id="review-hotel-id">
+        
+        <!-- Interactive Star Selector -->
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Your Rating</label>
+          <div class="flex items-center gap-1.5 text-2xl">
+            <span onclick="setHotelReviewRating(1)" onmouseover="highlightReviewStars(1)" onmouseout="resetReviewStars()" class="review-star cursor-pointer text-slate-300 transition-colors">★</span>
+            <span onclick="setHotelReviewRating(2)" onmouseover="highlightReviewStars(2)" onmouseout="resetReviewStars()" class="review-star cursor-pointer text-slate-300 transition-colors">★</span>
+            <span onclick="setHotelReviewRating(3)" onmouseover="highlightReviewStars(3)" onmouseout="resetReviewStars()" class="review-star cursor-pointer text-slate-300 transition-colors">★</span>
+            <span onclick="setHotelReviewRating(4)" onmouseover="highlightReviewStars(4)" onmouseout="resetReviewStars()" class="review-star cursor-pointer text-slate-300 transition-colors">★</span>
+            <span onclick="setHotelReviewRating(5)" onmouseover="highlightReviewStars(5)" onmouseout="resetReviewStars()" class="review-star cursor-pointer text-slate-300 transition-colors">★</span>
+            <span id="review-rating-label" class="text-xs text-slate-500 font-semibold ml-2">Select rating</span>
+          </div>
+          <input type="hidden" id="review-rating-value" required>
+        </div>
+        
+        <!-- Review text area -->
+        <div>
+          <label for="review-text-input" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Your Review</label>
+          <textarea id="review-text-input" required rows="3" placeholder="Share your experience at this hotel..." class="w-full border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+        </div>
+        
+        <!-- Submit Button -->
+        <div class="text-right">
+          <button type="submit" id="review-submit-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-all active:scale-95 duration-100 shadow-sm disabled:opacity-50">
+            Submit Review
+          </button>
+        </div>
+      </form>
+      
+      <div class="border-t border-slate-100"></div>
+      
+      <!-- Public Reviews List -->
+      <div class="space-y-3 flex-grow">
+        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Public Reviews</h4>
+        <div id="reviews-list-container" class="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+          <!-- Reviews injected here -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Vehicle Reviews & Ratings Modal -->
+<div id="vehicle-reviews-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[9999] p-4">
+  <div id="vehicle-reviews-modal-card" class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-lg w-full overflow-hidden text-left animate-fade-in-up flex flex-col max-h-[85vh]">
+    <!-- Header -->
+    <div class="bg-slate-900 text-white p-6 relative flex-shrink-0">
+      <h3 class="text-xl font-bold" id="vehicle-reviews-modal-title">Vehicle Reviews</h3>
+      <p class="text-white/70 text-xs mt-1" id="vehicle-reviews-modal-subtitle">Ratings & Comments</p>
+      <button onclick="closeVehicleReviewsModal()" class="absolute top-6 right-6 text-white/70 hover:text-white">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+    
+    <!-- Body (scrollable) -->
+    <div class="overflow-y-auto p-6 space-y-6 flex-grow flex flex-col">
+      <!-- Write a Review Form -->
+      <form id="vehicle-review-form" onsubmit="submitVehicleReview(event)" class="space-y-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
+        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Write a Review</h4>
+        <input type="hidden" id="review-vehicle-id">
+        
+        <!-- Interactive Star Selector -->
+        <div>
+          <label class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Your Rating</label>
+          <div class="flex items-center gap-1.5 text-2xl">
+            <span onclick="setVehicleReviewRating(1)" onmouseover="highlightVehicleReviewStars(1)" onmouseout="resetVehicleReviewStars()" class="vehicle-review-star cursor-pointer text-slate-300 transition-colors">★</span>
+            <span onclick="setVehicleReviewRating(2)" onmouseover="highlightVehicleReviewStars(2)" onmouseout="resetVehicleReviewStars()" class="vehicle-review-star cursor-pointer text-slate-300 transition-colors">★</span>
+            <span onclick="setVehicleReviewRating(3)" onmouseover="highlightVehicleReviewStars(3)" onmouseout="resetVehicleReviewStars()" class="vehicle-review-star cursor-pointer text-slate-300 transition-colors">★</span>
+            <span onclick="setVehicleReviewRating(4)" onmouseover="highlightVehicleReviewStars(4)" onmouseout="resetVehicleReviewStars()" class="vehicle-review-star cursor-pointer text-slate-300 transition-colors">★</span>
+            <span onclick="setVehicleReviewRating(5)" onmouseover="highlightVehicleReviewStars(5)" onmouseout="resetVehicleReviewStars()" class="vehicle-review-star cursor-pointer text-slate-300 transition-colors">★</span>
+            <span id="vehicle-review-rating-label" class="text-xs text-slate-500 font-semibold ml-2">Select rating</span>
+          </div>
+          <input type="hidden" id="vehicle-review-rating-value" required>
+        </div>
+        
+        <!-- Review text area -->
+        <div>
+          <label for="vehicle-review-text-input" class="block text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Your Review</label>
+          <textarea id="vehicle-review-text-input" required rows="3" placeholder="Share your feedback about the vehicle's quality, driver, and overall journey comfort..." class="w-full border border-slate-200 rounded-lg p-2.5 text-xs text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+        </div>
+        
+        <!-- Submit Button -->
+        <div class="text-right">
+          <button type="submit" id="vehicle-review-submit-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition-all active:scale-95 duration-100 shadow-sm disabled:opacity-50">
+            Submit Review
+          </button>
+        </div>
+      </form>
+      
+      <div class="border-t border-slate-100"></div>
+      
+      <!-- Public Reviews List -->
+      <div class="space-y-3 flex-grow">
+        <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Public Reviews</h4>
+        <div id="vehicle-reviews-list-container" class="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+          <!-- Reviews injected here -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Food Ordering Modal -->
-<div id="food-ordering-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+<div id="food-ordering-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[9999] p-4">
   <div class="bg-white rounded-2xl shadow-xl border border-slate-200 max-w-2xl w-full overflow-hidden text-left animate-fade-in-up flex flex-col max-h-[85vh]">
     <!-- Header -->
     <div class="bg-slate-900 text-white p-6 relative flex-shrink-0">
@@ -1665,9 +1784,11 @@
     
     let html = '';
     hotels.forEach(hotel => {
-      const rating = '★'.repeat(hotel.star_rating) + '☆'.repeat(5 - hotel.star_rating);
+      const displayStars = Math.round(hotel.avg_rating || hotel.star_rating || 3.0);
+      const rating = '★'.repeat(displayStars) + '☆'.repeat(5 - displayStars);
       const amenitiesList = hotel.amenities ? (typeof hotel.amenities === 'string' ? hotel.amenities.split(',') : hotel.amenities) : [];
       const amenitiesHtml = amenitiesList.map(a => `<span class="bg-emerald-50 text-emerald-700 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-emerald-100">${a.trim()}</span>`).join(' ');
+      const escapedHotelName = hotel.name.replace(/'/g, "\\'");
       
       html += `
         <div class="bg-white border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:shadow-md transition-all">
@@ -1675,6 +1796,10 @@
             <div class="flex items-center gap-2 flex-wrap">
               <strong class="text-sm text-slate-800">${hotel.name}</strong>
               <span class="text-xs text-amber-500">${rating}</span>
+              <span class="text-xs text-slate-400 font-semibold">${hotel.avg_rating ? hotel.avg_rating.toFixed(1) : '0.0'}★</span>
+              <button onclick="openHotelReviewsModal(${hotel.id}, '${escapedHotelName}')" class="text-[11px] text-slate-500 hover:text-emerald-600 underline font-medium ml-1">
+                (${hotel.total_reviews || 0} reviews)
+              </button>
             </div>
             <p class="text-xs text-slate-500">📍 ${hotel.address}, ${hotel.city}</p>
             <div class="flex flex-wrap gap-1 mt-2">${amenitiesHtml}</div>
@@ -1708,6 +1833,361 @@
       destBtn.className = 'px-3 py-1.5 rounded-md text-slate-500 hover:text-slate-800 transition-all';
     }
     
+    renderHotels();
+  }
+
+  let selectedReviewRating = 0;
+
+  function highlightReviewStars(rating) {
+    const stars = document.querySelectorAll('.review-star');
+    stars.forEach((star, index) => {
+      if (index < rating) {
+        star.classList.remove('text-slate-300');
+        star.classList.add('text-amber-500');
+      } else {
+        star.classList.remove('text-amber-500');
+        star.classList.add('text-slate-300');
+      }
+    });
+  }
+
+  function resetReviewStars() {
+    const stars = document.querySelectorAll('.review-star');
+    stars.forEach((star, index) => {
+      if (index < selectedReviewRating) {
+        star.classList.remove('text-slate-300');
+        star.classList.add('text-amber-500');
+      } else {
+        star.classList.remove('text-amber-500');
+        star.classList.add('text-slate-300');
+      }
+    });
+  }
+
+  function setHotelReviewRating(rating) {
+    selectedReviewRating = rating;
+    document.getElementById('review-rating-value').value = rating;
+    const label = document.getElementById('review-rating-label');
+    const labels = ["", "Terrible", "Bad", "Okay", "Good", "Excellent"];
+    label.textContent = labels[rating] || "Select rating";
+    resetReviewStars();
+  }
+
+  let selectedVehicleReviewRating = 0;
+
+  function highlightVehicleReviewStars(rating) {
+    const stars = document.querySelectorAll('.vehicle-review-star');
+    stars.forEach((star, index) => {
+      if (index < rating) {
+        star.classList.remove('text-slate-300');
+        star.classList.add('text-amber-500');
+      } else {
+        star.classList.remove('text-amber-500');
+        star.classList.add('text-slate-300');
+      }
+    });
+  }
+
+  function resetVehicleReviewStars() {
+    const stars = document.querySelectorAll('.vehicle-review-star');
+    stars.forEach((star, index) => {
+      if (index < selectedVehicleReviewRating) {
+        star.classList.remove('text-slate-300');
+        star.classList.add('text-amber-500');
+      } else {
+        star.classList.remove('text-amber-500');
+        star.classList.add('text-slate-300');
+      }
+    });
+  }
+
+  function setVehicleReviewRating(rating) {
+    selectedVehicleReviewRating = rating;
+    document.getElementById('vehicle-review-rating-value').value = rating;
+    const label = document.getElementById('vehicle-review-rating-label');
+    const labels = ["", "Terrible", "Bad", "Okay", "Good", "Excellent"];
+    label.textContent = labels[rating] || "Select rating";
+    resetVehicleReviewStars();
+  }
+
+  async function openVehicleReviewsModal(vehicleId, vehicleName) {
+    document.getElementById('review-vehicle-id').value = vehicleId;
+    document.getElementById('vehicle-reviews-modal-title').textContent = `${vehicleName}`;
+    document.getElementById('vehicle-reviews-modal-subtitle').textContent = `Loading reviews...`;
+    
+    // Reset review form inputs
+    selectedVehicleReviewRating = 0;
+    document.getElementById('vehicle-review-rating-value').value = "";
+    document.getElementById('vehicle-review-rating-label').textContent = "Select rating";
+    document.getElementById('vehicle-review-text-input').value = "";
+    resetVehicleReviewStars();
+    
+    // Show modal
+    const modal = document.getElementById('vehicle-reviews-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Lock body scrolling and reset modal card scroll position
+    document.body.style.overflow = "hidden";
+    const card = document.getElementById('vehicle-reviews-modal-card');
+    if (card) card.scrollTop = 0;
+    
+    // Load reviews
+    await refreshVehicleReviewsList(vehicleId);
+  }
+
+  function closeVehicleReviewsModal() {
+    const modal = document.getElementById('vehicle-reviews-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = "";
+  }
+
+  async function refreshVehicleReviewsList(vehicleId) {
+    const container = document.getElementById('vehicle-reviews-list-container');
+    container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">Loading reviews...</div>`;
+    
+    try {
+      const res = await fetch(`/api/provider/vehicles/${vehicleId}/reviews`, {
+        method: "GET",
+        headers: getHeaders()
+      });
+      if (!res.ok) throw new Error("Failed to fetch reviews");
+      const reviews = await res.json();
+      
+      // Update subtitle showing average rating and count if available
+      const subtitle = document.getElementById('vehicle-reviews-modal-subtitle');
+      if (reviews.length > 0) {
+        const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+        subtitle.textContent = `★ ${avg.toFixed(1)} / 5.0 (${reviews.length} reviews)`;
+        
+        let html = '';
+        reviews.forEach(r => {
+          const starsStr = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+          html += `
+            <div class="bg-slate-50 border border-slate-100 rounded-xl p-3.5 space-y-2 text-left">
+              <div class="flex justify-between items-start flex-wrap gap-1">
+                <div>
+                  <span class="font-bold text-xs text-slate-800">👤 ${r.user_name}</span>
+                  <span class="text-xs text-amber-500 ml-2">${starsStr}</span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium">${r.created_at}</span>
+              </div>
+              <p class="text-xs text-slate-600 leading-relaxed">${r.review_text}</p>
+            </div>
+          `;
+        });
+        container.innerHTML = html;
+      } else {
+        subtitle.textContent = `No reviews yet`;
+        container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs italic">Be the first to review this cab!</div>`;
+      }
+    } catch (err) {
+      console.error(err);
+      container.innerHTML = `<div class="text-center py-6 text-red-500 text-xs">⚠️ Failed to load reviews.</div>`;
+    }
+  }
+
+  async function submitVehicleReview(event) {
+    event.preventDefault();
+    const vehicleId = document.getElementById('review-vehicle-id').value;
+    const rating = parseInt(document.getElementById('vehicle-review-rating-value').value);
+    const reviewText = document.getElementById('vehicle-review-text-input').value.trim();
+    
+    if (!rating || !reviewText) {
+      alert("Please select a rating and write a review.");
+      return;
+    }
+    
+    const submitBtn = document.getElementById('vehicle-review-submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+    
+    try {
+      const res = await fetch(`/api/provider/vehicles/${vehicleId}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getHeaders()
+        },
+        body: JSON.stringify({ rating: rating, review_text: reviewText })
+      });
+      
+      if (!res.ok) {
+        throw new Error("Failed to submit review");
+      }
+      
+      // Clear form
+      selectedVehicleReviewRating = 0;
+      document.getElementById('vehicle-review-rating-value').value = "";
+      document.getElementById('vehicle-review-rating-label').textContent = "Select rating";
+      document.getElementById('vehicle-review-text-input').value = "";
+      resetVehicleReviewStars();
+      
+      // Refresh list
+      await refreshVehicleReviewsList(vehicleId);
+      
+      const parsedData = await res.json();
+      updateLocalVehicleRatings(vehicleId, parsedData.avg_rating, parsedData.total_reviews);
+      
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit review. Make sure you are logged in.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit Review";
+    }
+  }
+
+  function updateLocalVehicleRatings(vehicleId, newAvgRating, newTotalReviews) {
+    if (loadedCabServices) {
+      loadedCabServices.forEach(s => {
+        if (s.id === parseInt(vehicleId)) {
+          s.avg_rating = newAvgRating;
+          s.total_reviews = newTotalReviews;
+        }
+      });
+      renderCabsList(loadedCabServices);
+    }
+  }
+
+  async function openHotelReviewsModal(hotelId, hotelName) {
+    document.getElementById('review-hotel-id').value = hotelId;
+    document.getElementById('reviews-modal-title').textContent = `${hotelName}`;
+    document.getElementById('reviews-modal-subtitle').textContent = `Loading reviews...`;
+    
+    // Reset review form inputs
+    selectedReviewRating = 0;
+    document.getElementById('review-rating-value').value = "";
+    document.getElementById('review-rating-label').textContent = "Select rating";
+    document.getElementById('review-text-input').value = "";
+    resetReviewStars();
+    
+    // Show modal
+    const modal = document.getElementById('hotel-reviews-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    
+    // Lock body scrolling and reset modal card scroll position
+    document.body.style.overflow = "hidden";
+    const card = document.getElementById('hotel-reviews-modal-card');
+    if (card) card.scrollTop = 0;
+    
+    // Load reviews
+    await refreshReviewsList(hotelId);
+  }
+
+  function closeHotelReviewsModal() {
+    const modal = document.getElementById('hotel-reviews-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = "";
+  }
+
+  async function refreshReviewsList(hotelId) {
+    const container = document.getElementById('reviews-list-container');
+    container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs italic">Loading reviews...</div>`;
+    
+    try {
+      const res = await fetch(`/api/booking/hotels/${hotelId}/reviews`);
+      if (!res.ok) throw new Error("Failed to fetch reviews");
+      const reviews = await res.json();
+      
+      // Update subtitle showing average rating and count if available
+      const subtitle = document.getElementById('reviews-modal-subtitle');
+      if (reviews.length > 0) {
+        const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+        subtitle.textContent = `★ ${avg.toFixed(1)} / 5.0 (${reviews.length} reviews)`;
+        
+        let html = '';
+        reviews.forEach(r => {
+          const starsStr = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+          html += `
+            <div class="bg-slate-50 border border-slate-100 rounded-xl p-3.5 space-y-2 text-left">
+              <div class="flex justify-between items-start flex-wrap gap-1">
+                <div>
+                  <span class="font-bold text-xs text-slate-800">👤 ${r.user_name}</span>
+                  <span class="text-xs text-amber-500 ml-2">${starsStr}</span>
+                </div>
+                <span class="text-[10px] text-slate-400 font-medium">${r.created_at}</span>
+              </div>
+              <p class="text-xs text-slate-600 leading-relaxed">${r.review_text}</p>
+            </div>
+          `;
+        });
+        container.innerHTML = html;
+      } else {
+        subtitle.textContent = `No reviews yet`;
+        container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs italic">Be the first to review this hotel!</div>`;
+      }
+    } catch (err) {
+      console.error(err);
+      container.innerHTML = `<div class="text-center py-6 text-red-500 text-xs">⚠️ Failed to load reviews.</div>`;
+    }
+  }
+
+  async function submitHotelReview(event) {
+    event.preventDefault();
+    const hotelId = document.getElementById('review-hotel-id').value;
+    const rating = parseInt(document.getElementById('review-rating-value').value);
+    const reviewText = document.getElementById('review-text-input').value.trim();
+    
+    if (!rating || !reviewText) {
+      alert("Please select a rating and write a review.");
+      return;
+    }
+    
+    const submitBtn = document.getElementById('review-submit-btn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+    
+    try {
+      const res = await fetch(`/api/booking/hotels/${hotelId}/reviews`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ rating: rating, review_text: reviewText })
+      });
+      
+      if (!res.ok) {
+        throw new Error("Failed to submit review");
+      }
+      
+      // Clear form
+      selectedReviewRating = 0;
+      document.getElementById('review-rating-value').value = "";
+      document.getElementById('review-rating-label').textContent = "Select rating";
+      document.getElementById('review-text-input').value = "";
+      resetReviewStars();
+      
+      // Refresh list
+      await refreshReviewsList(hotelId);
+      
+      const parsedData = await res.json();
+      updateLocalHotelRatings(hotelId, parsedData.avg_rating, parsedData.total_reviews);
+      
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit review. Make sure you are logged in.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit Review";
+    }
+  }
+
+  function updateLocalHotelRatings(hotelId, newAvgRating, newTotalReviews) {
+    const updateList = (list) => {
+      if (!list) return;
+      list.forEach(h => {
+        if (h.id === parseInt(hotelId)) {
+          h.avg_rating = newAvgRating;
+          h.total_reviews = newTotalReviews;
+        }
+      });
+    };
+    updateList(destinationHotels);
+    updateList(routeHotels);
     renderHotels();
   }
 
@@ -2212,6 +2692,10 @@
         fareLabel = "Fare Per Seat";
       }
 
+      const displayStars = Math.round(s.avg_rating || 3.0);
+      const ratingStars = '★'.repeat(displayStars) + '☆'.repeat(5 - displayStars);
+      const escapedCabName = s.vehicle_name.replace(/'/g, "\\'");
+
       const seatsText = s.cab_category === "rental"
         ? `💺 Total Seats: ${s.total_seats}`
         : s.cab_category === "private"
@@ -2221,8 +2705,13 @@
       html += `
         <div class="bg-white border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:shadow-md transition-all text-left" style="border-left: 4px solid #ec4899;">
           <div class="space-y-1">
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <strong class="text-sm text-slate-800">${s.vehicle_name}</strong>
+              <span class="text-xs text-amber-500">${ratingStars}</span>
+              <span class="text-xs text-slate-400 font-semibold">${s.avg_rating ? s.avg_rating.toFixed(1) : '0.0'}★</span>
+              <button onclick="openVehicleReviewsModal(${s.id}, '${escapedCabName}')" class="text-[11px] text-slate-500 hover:text-pink-600 underline font-medium ml-1">
+                (${s.total_reviews || 0} reviews)
+              </button>
               <span class="text-xs bg-pink-50 text-pink-600 border border-pink-100 px-2 py-0.5 rounded-full font-bold">${desc}</span>
             </div>
             <p class="text-xs text-slate-500">👤 Provider: ${s.provider_name} · ${seatsText}</p>
@@ -3701,6 +4190,16 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    // Append reviews modals to body to bypass any transform parent containment contexts
+    const hotelReviewsModal = document.getElementById('hotel-reviews-modal');
+    if (hotelReviewsModal && hotelReviewsModal.parentElement !== document.body) {
+      document.body.appendChild(hotelReviewsModal);
+    }
+    const vehicleReviewsModal = document.getElementById('vehicle-reviews-modal');
+    if (vehicleReviewsModal && vehicleReviewsModal.parentElement !== document.body) {
+      document.body.appendChild(vehicleReviewsModal);
+    }
+
     loadAllHotels();
     
     const travelMode = "{{ trip.travel_mode }}";
