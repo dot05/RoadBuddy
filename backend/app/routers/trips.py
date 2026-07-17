@@ -478,21 +478,21 @@ def build_user_context(user_id: int, db: Session) -> str:
     lines.append(f"User Email: {user.email}")
     
     # Vehicles
-    vehicles = db.query(Vehicle).filter(Vehicle.user_id == user_id).all()
+    vehicles = db.query(Vehicle).filter(Vehicle.user_id == user_id).limit(5).all()
     if vehicles:
         lines.append("User Vehicles:")
         for v in vehicles:
             lines.append(f"- Vehicle: {v.name} ({v.category}, Fuel: {v.fuel_type}, Mileage: {v.mileage_kmpl} kmpl)")
             
     # Trips
-    trips = db.query(Trip).filter(Trip.user_id == user_id).all()
+    trips = db.query(Trip).filter(Trip.user_id == user_id).order_by(Trip.id.desc()).limit(5).all()
     if trips:
         lines.append("User Trips:")
         for t in trips:
             lines.append(f"- Trip: {t.origin} to {t.destination} ({t.start_date} to {t.end_date or 'N/A'}), Travel Mode: {t.travel_mode}, Budget: INR {t.budget_inr}, Total Estimated Cost: INR {t.total_cost_inr}")
 
     # Hotel Bookings
-    hotel_bookings = db.query(HotelBooking).filter(HotelBooking.user_id == user_id).all()
+    hotel_bookings = db.query(HotelBooking).filter(HotelBooking.user_id == user_id, HotelBooking.status != "cancelled").order_by(HotelBooking.id.desc()).limit(5).all()
     if hotel_bookings:
         lines.append("User Hotel Bookings:")
         for hb in hotel_bookings:
@@ -508,7 +508,7 @@ def build_user_context(user_id: int, db: Session) -> str:
             )
             
     # Train Bookings
-    train_bookings = db.query(TrainBooking).filter(TrainBooking.user_id == user_id).all()
+    train_bookings = db.query(TrainBooking).filter(TrainBooking.user_id == user_id, TrainBooking.status != "cancelled").order_by(TrainBooking.id.desc()).limit(5).all()
     if train_bookings:
         lines.append("User Train Bookings:")
         for tb in train_bookings:
@@ -524,7 +524,7 @@ def build_user_context(user_id: int, db: Session) -> str:
             )
             
     # Bus Bookings
-    bus_bookings = db.query(BusBooking).filter(BusBooking.user_id == user_id).all()
+    bus_bookings = db.query(BusBooking).filter(BusBooking.user_id == user_id, BusBooking.status != "cancelled").order_by(BusBooking.id.desc()).limit(5).all()
     if bus_bookings:
         lines.append("User Bus Bookings:")
         for bb in bus_bookings:
@@ -540,7 +540,7 @@ def build_user_context(user_id: int, db: Session) -> str:
             )
             
     # Flight Bookings
-    flight_bookings = db.query(FlightBooking).filter(FlightBooking.user_id == user_id).all()
+    flight_bookings = db.query(FlightBooking).filter(FlightBooking.user_id == user_id, FlightBooking.status != "cancelled").order_by(FlightBooking.id.desc()).limit(5).all()
     if flight_bookings:
         lines.append("User Flight Bookings:")
         for fb in flight_bookings:
@@ -556,7 +556,7 @@ def build_user_context(user_id: int, db: Session) -> str:
             )
             
     # Transit Bookings (generic Booking model)
-    transit_bookings = db.query(Booking).filter(Booking.user_id == user_id).all()
+    transit_bookings = db.query(Booking).filter(Booking.user_id == user_id, Booking.status != "cancelled").order_by(Booking.id.desc()).limit(5).all()
     if transit_bookings:
         lines.append("User Transit Bookings:")
         for b in transit_bookings:
@@ -585,7 +585,7 @@ def build_user_context(user_id: int, db: Session) -> str:
             )
 
     # Cab Bookings (ProviderBooking)
-    cab_bookings = db.query(ProviderBooking).filter(ProviderBooking.user_id == user_id).all()
+    cab_bookings = db.query(ProviderBooking).filter(ProviderBooking.user_id == user_id, ProviderBooking.status != "cancelled").order_by(ProviderBooking.id.desc()).limit(5).all()
     if cab_bookings:
         lines.append("User Cab Bookings:")
         for cb in cab_bookings:

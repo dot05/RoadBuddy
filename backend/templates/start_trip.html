@@ -562,41 +562,152 @@
 
   /* ─── MOBILE MEDIA RESPONSIVENESS OVERRIDES ─── */
   @media (max-width: 768px) {
-    .topbar { height: 50px; padding: 0 16px; }
-    .topbar-subtitle { display: none; }
-    .btn-text { display: none; }
-    .transport-bar { height: 48px; padding: 0 12px; gap: 6px; }
-    .transport-tab { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+    .topbar {
+      height: 56px !important;
+      padding: 0 12px !important;
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      flex-wrap: nowrap !important;
+      background: var(--surface) !important;
+    }
+    .topbar > div:first-child {
+      display: flex !important;
+      align-items: center !important;
+    }
+    .topbar > div:last-child {
+      display: flex !important;
+      gap: 6px !important;
+      align-items: center !important;
+      margin-left: auto !important;
+    }
+    
+    /* Modern circular buttons for mobile topbar */
+    .topbar button, .topbar a.back-to-itinerary, .topbar a[href="/dashboard"] {
+      width: 36px !important;
+      height: 36px !important;
+      padding: 0 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border-radius: 50% !important;
+      font-size: 16px !important;
+      border: 1.5px solid var(--border-color) !important;
+      background: var(--surface) !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
+      flex-shrink: 0 !important;
+    }
+    .topbar button.splitwise-trigger-btn {
+      border-color: #1d9e75 !important;
+      background: #f0fdf9 !important;
+      color: #1d9e75 !important;
+    }
+    .topbar button[onclick="endTrip()"] {
+      border-color: #ef4444 !important;
+      background: #fef2f2 !important;
+      color: #ef4444 !important;
+    }
+    
+    .topbar-subtitle { display: none !important; }
+    .btn-text { display: none !important; }
+    
+    .transport-bar {
+      height: 48px !important;
+      padding: 0 12px !important;
+      gap: 8px !important;
+      background: #f8fafc !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+      display: flex !important;
+      align-items: center !important;
+      overflow-x: auto !important;
+    }
+    .transport-tab {
+      padding: 6px 12px !important;
+      font-size: 12px !important;
+      border-radius: 20px !important;
+      font-weight: 700 !important;
+      white-space: nowrap !important;
+    }
     
     .main-layout {
-      flex-direction: column;
-      height: calc(100vh - 98px);
+      flex-direction: column !important;
+      height: calc(100vh - 104px) !important;
     }
     
     .left-panel {
-      width: 100%;
-      height: auto;
-      max-height: 45%;
-      border-right: none;
-      border-bottom: 1px solid var(--border-color);
-      overflow-y: auto;
+      width: 100% !important;
+      height: auto !important;
+      max-height: 40% !important;
+      border-right: none !important;
+      border-bottom: 1px solid var(--border-color) !important;
+      overflow-y: auto !important;
     }
     
-    .panel-section { padding: 12px 16px; }
-    .loc-input { padding: 10px 10px 10px 32px; font-size: 13px; }
-    .get-routes-btn { padding: 12px; font-size: 13px; margin-top: 2px; }
+    .panel-section { padding: 12px 16px !important; }
+    .loc-input { padding: 10px 10px 10px 32px !important; font-size: 13px !important; }
+    .get-routes-btn { padding: 12px !important; font-size: 13px !important; margin-top: 2px !important; }
     
     .right-map-area {
-      flex: 1;
-      height: 55%;
+      flex: 1 !important;
+      height: 60% !important;
+    }
+
+    /* POI categories bar overlay styling */
+    .poi-categories-bar {
+      top: 10px !important;
+      left: 10px !important;
+      right: 10px !important;
+      gap: 6px !important;
+    }
+    .poi-btn {
+      padding: 6px 12px !important;
+      font-size: 11.5px !important;
+      background: rgba(255, 255, 255, 0.92) !important;
+      backdrop-filter: blur(6px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.6) !important;
+      border-radius: 20px !important;
+      color: #334155 !important;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05) !important;
+    }
+    .poi-btn.active {
+      background: #10b981 !important;
+      color: #ffffff !important;
+      border-color: #10b981 !important;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
+    }
+
+    /* Shift Mapbox default controls to not overlap with POI bar or compass */
+    .mapboxgl-ctrl-top-right {
+      top: auto !important;
+      bottom: 120px !important;
     }
     
-    .map-controls { bottom: 16px; right: 16px; }
-    .map-ctrl-btn { padding: 8px 12px; font-size: 12px; }
+    .map-controls {
+      bottom: 16px !important;
+      right: 16px !important;
+      gap: 8px !important;
+    }
+    .map-ctrl-btn {
+      background: rgba(255, 255, 255, 0.92) !important;
+      backdrop-filter: blur(8px) !important;
+      border: 1px solid rgba(255, 255, 255, 0.6) !important;
+      border-radius: 24px !important;
+      padding: 8px 16px !important;
+      font-size: 11.5px !important;
+      font-weight: 700 !important;
+      color: #1e293b !important;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.1) !important;
+    }
+    .map-ctrl-btn#nav-toggle-btn {
+      background: linear-gradient(135deg, #10b981, #059669) !important;
+      color: #ffffff !important;
+      border: none !important;
+      box-shadow: 0 8px 16px rgba(16, 185, 129, 0.24) !important;
+    }
 
     /* Auto-collapses input sections when route sets render on mobile screen bounds */
     .left-panel.collapsed-view {
-      max-height: 150px;
+      max-height: 140px !important;
     }
 
     /* Hide ticket card in the left-panel on mobile to avoid squishing/overlapping */
@@ -607,6 +718,44 @@
     /* Show the mobile ticket button inside the left panel on mobile */
     .view-ticket-mobile-btn {
       display: block !important;
+    }
+
+    #gps-status-row {
+      padding: 6px 12px !important;
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      background: rgba(16, 185, 129, 0.06) !important;
+      border-bottom: 1px solid rgba(16, 185, 129, 0.12) !important;
+      color: #065f46 !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+    }
+    
+    #search-summary-bar {
+      margin: 8px 12px !important;
+      padding: 10px 14px !important;
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 12px !important;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .dir-header {
+      padding: 8px 16px !important;
+      background: #f8fafc !important;
+      border-top: 1px solid #e2e8f0 !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+    .dir-header-title {
+      font-size: 11.5px !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      color: #64748b !important;
+    }
+    .route-meta {
+      font-size: 12px !important;
+      color: #10b981 !important;
     }
   }
 
