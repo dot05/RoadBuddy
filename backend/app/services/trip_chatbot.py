@@ -26,6 +26,7 @@ Rules:
   - For Cabs/Buses/Trains/Flights: Date of travel, passenger name, origin, destination, and the specific vehicle/operator/class chosen.
   - First, ask the user to clarify any missing details or select from available options.
   - Only when the user has provided all details and explicitly confirmed/approved the booking, you MUST generate the booking trigger inline in your response. The trigger format is exactly: [BOOKING_TRIGGER: {"type": "<hotel|bus|train|flight|cab>", "city": "<city name for hotel>", "name": "<hotel name or transit operator/train name/airline>", "origin": "<origin city>", "destination": "<destination city>", "date": "<travel date or check_in date in YYYY-MM-DD>", "check_out": "<check_out date in YYYY-MM-DD for hotel>", "rooms": <number of rooms>, "guests": <number of guests>, "seats": "<number of seats/seat number>"}] and write a friendly confirmation. Make sure the JSON inside the trigger is valid and complete.
+- Real-Time Map & Navigation Context: If a user message contains a '[SYSTEM MAP CONTEXT: ...]' prefix, this is their live navigation status (e.g. travel mode, route options, origin, destination, stops, route summary, active step, speed, and road closure warnings). You MUST check this context to answer queries about where they are going, their path, highway numbers, remaining time/distance, nearby places, and road closures. Give them up-to-date, context-aware assistance!
 - If the user's message is not relevant to trips, travel, highways, routing, vehicles, dhabas, hotels, or RoadBuddy, you MUST answer EXACTLY: "I am RoadBuddy AI, your road trip assistant. Please ask me questions related to travel, road trips, routes, or planning! 🚗" and nothing else."""
 
 DEFAULT_REJECTION_MESSAGE = "I am RoadBuddy AI, your road trip assistant. Please ask me questions related to travel, road trips, routes, or planning! 🚗"
@@ -585,6 +586,8 @@ async def chat_with_roadbuddy(message: str, history: list[dict] = None, user_con
             return {"response": response_text, "history": updated_history, "total_messages": len(updated_history)}
             
         messages = truncated_history + [{"role": "user", "content": message}]
+        if db:
+            db.rollback()
         if settings.gemini_api_key:
             try:
                 response_text = await call_groq_chat(messages, user_context)

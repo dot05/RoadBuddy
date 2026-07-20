@@ -6,7 +6,7 @@
 
 <!-- Interactive Map Modal -->
 <div id="dashboard-map-modal" style="position: fixed; inset: 0; z-index: 999999; display: none; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(10px); align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;">
-  <div style="position: relative; width: 95vw; height: 90vh; background: #0f172a; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
+  <div id="map-modal-card" style="position: relative; width: 95vw; height: 90vh; background: #0f172a; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);">
     
     <!-- Modal Header -->
     <div style="padding: 16px 24px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; justify-content: space-between; align-items: center; background: rgba(30, 41, 59, 0.5);">
@@ -46,11 +46,10 @@
         <!-- Search Place Mode vs Direction Mode Toggle -->
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Navigation Panel</span>
-          <button onclick="toggleDirectionsMode()" id="toggle-directions-btn" style="background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); color: #10b981; font-size: 11px; font-weight: 700; cursor: pointer; border-radius: 6px; padding: 4px 8px; transition: all 0.2s;">Enable Directions</button>
         </div>
 
         <!-- General Search Box (Hidden in Directions Mode) -->
-        <div id="general-search-section" style="display: flex; flex-direction: column; gap: 8px;">
+        <div id="general-search-section" style="display: none; flex-direction: column; gap: 8px;">
           <div style="display: flex; gap: 8px; position: relative;">
             <input type="text" id="map-search-input" placeholder="Search for places..." style="flex: 1; padding: 10px 12px; font-size: 13px; background: rgba(15, 23, 42, 0.6); border: 1.5px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff; outline: none; transition: all 0.2s;" onfocus="this.style.borderColor='#10b981'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'"/>
             <button onclick="searchMapLocation()" style="background: #10b981; border: none; border-radius: 8px; width: 38px; height: 38px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; transition: all 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
@@ -61,7 +60,7 @@
         </div>
 
         <!-- Waypoints Container (Visible in Directions Mode) -->
-        <div id="directions-container" style="display: none; flex-direction: column; gap: 12px;">
+        <div id="directions-container" style="display: flex; flex-direction: column; gap: 12px;">
           <!-- Dynamically Rendered Inputs for Start, Waypoints, Destination -->
           <div id="waypoints-input-list" style="display: flex; flex-direction: column; gap: 10px; position: relative; padding-left: 14px; border-left: 2px dashed rgba(255,255,255,0.15); margin-left: 6px;">
             <!-- Rendered in JS: Origin, Waypoints, Destination -->
@@ -501,7 +500,14 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 991px) {
+  #map-modal-card {
+    width: 100vw !important;
+    height: 100vh !important;
+    border-radius: 0px !important;
+    border: none !important;
+  }
+
   body.chatbot-open #floating-chatbot-card {
     position: fixed !important;
     left: 0 !important;
@@ -520,13 +526,51 @@
   
   #map-control-panel {
     position: absolute !important;
-    left: 12px !important;
-    top: 12px !important;
-    width: calc(100% - 24px) !important;
-    max-height: 45vh !important;
-    border-radius: 14px !important;
-    border: 1.5px solid rgba(255,255,255,0.1) !important;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.5) !important;
+    left: 10px !important;
+    top: 10px !important;
+    width: calc(100% - 20px) !important;
+    max-height: 55vh !important;
+    overflow-y: auto !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
+    z-index: 1000 !important;
+    padding: 14px !important;
+    gap: 12px !important;
+    transition: max-height 0.3s ease, border-radius 0.3s ease !important;
+  }
+
+  /* Expand waypoint editor height when keyboard opens and user is typing */
+  #map-control-panel:focus-within {
+    max-height: 80vh !important;
+    border-color: #10b981 !important;
+  }
+
+  #dashboard-map-modal > div > div:first-child {
+    padding-top: calc(12px + env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: 12px !important;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  #dashboard-map-modal h3 {
+    font-size: 15px !important;
+  }
+
+  #waypoints-input-list input {
+    font-size: 11px !important;
+    padding: 6px 8px !important;
+    min-width: 0 !important;
+  }
+
+  [id^="waypoint-sugg-"] {
+    max-height: 110px !important;
+    left: 24px !important;
+  }
+
+  .mapboxgl-ctrl-top-right {
+    top: auto !important;
+    bottom: 140px !important;
   }
 
   #road-closure-banner {
@@ -736,7 +780,7 @@ let mapSearchMarker = null;
 let routeStartMarker = null;
 let routeEndMarker = null;
 let currentRouteData = null;
-let directionsModeActive = false;
+let directionsModeActive = true;
 let userLocationMarker = null;
 
 // Navigation State Variables
@@ -776,9 +820,12 @@ function openDashboardMapModal() {
   // Initialize map if not yet initialized
   if (!dashboardMap) {
     initDashboardMap();
+    setTimeout(() => {
+      if (dashboardMap) dashboardMap.resize();
+    }, 400);
   } else {
     setTimeout(() => {
-      dashboardMap.resize();
+      if (dashboardMap) dashboardMap.resize();
     }, 100);
   }
 }
@@ -929,7 +976,7 @@ function toggleDirectionsMode() {
   if (directionsPanel.style.display === 'none') {
     directionsPanel.style.display = 'flex';
     searchPanel.style.display = 'none';
-    btn.innerText = 'Disable Directions';
+    if (btn) btn.innerText = 'Disable Directions';
     directionsModeActive = true;
     
     // Autofill destination if search input has a value
@@ -941,7 +988,7 @@ function toggleDirectionsMode() {
   } else {
     directionsPanel.style.display = 'none';
     searchPanel.style.display = 'flex';
-    btn.innerText = 'Enable Directions';
+    if (btn) btn.innerText = 'Enable Directions';
     directionsModeActive = false;
     clearRoute();
   }

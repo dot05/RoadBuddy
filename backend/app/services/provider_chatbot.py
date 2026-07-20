@@ -25,8 +25,8 @@ def get_provider_data_summary(provider_id: int, db: Session) -> str:
     if not provider:
         return "No partner account found."
         
-    vehicles = db.query(ProviderVehicle).filter(ProviderVehicle.provider_id == provider_id).all()
-    bookings = db.query(ProviderBooking).join(ProviderVehicle).filter(ProviderVehicle.provider_id == provider_id).all()
+    vehicles = db.query(ProviderVehicle).filter(ProviderVehicle.provider_id == provider_id).limit(10).all()
+    bookings = db.query(ProviderBooking).join(ProviderVehicle).filter(ProviderVehicle.provider_id == provider_id, ProviderBooking.status != "cancelled").order_by(ProviderBooking.id.desc()).limit(10).all()
     
     vehicle_summary = []
     for v in vehicles:
@@ -782,6 +782,8 @@ async def chat_with_provider_bot(message: str, history: list[dict] = None, provi
                 if db and provider_id:
                     summary = get_provider_data_summary(provider_id, db)
                     dynamic_prompt += f"\n\n{summary}"
+                if db:
+                    db.rollback()
                 response_text = await call_groq_chat(messages, dynamic_prompt)
             except Exception as e:
                 print(f"Groq provider chat failed: {e}. Falling back to mock response.")
