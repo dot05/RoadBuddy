@@ -419,20 +419,32 @@
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
   }
 
-  /* ─── POI CATEGORY BUTTONS ─── */
+  /* ─── POI CATEGORY SIDEBAR TOOLBAR ─── */
   .poi-categories-bar {
     position: absolute;
     top: 16px;
     left: 16px;
-    right: 16px;
-    z-index: 1000;
+    z-index: var(--z-poi-bar, 25);
     display: flex;
+    flex-direction: column;
     gap: 8px;
-    overflow-x: auto;
-    padding: 4px;
+    padding: 6px;
     pointer-events: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    transition: all 0.3s ease;
+  }
+  body.nav-active .poi-categories-bar {
+    top: 140px;
+  }
+  @media (min-width: 769px) {
+    body.nav-active .poi-categories-bar {
+      top: 16px;
+    }
   }
   .poi-categories-bar::-webkit-scrollbar {
     display: none;
@@ -440,24 +452,26 @@
   .poi-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
+    gap: 8px;
+    padding: 8px 14px;
     background: #ffffff;
-    border: 1.5px solid var(--border-color);
-    border-radius: 20px;
-    font-size: 13px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 12.5px;
     font-weight: 700;
-    color: var(--text-dark);
+    color: #1e293b;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    transition: all 0.2s ease;
     white-space: nowrap;
     outline: none;
   }
   .poi-btn:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-    background: var(--primary-light);
+    border-color: #10b981;
+    color: #10b981;
+    background: #ecfdf5;
+    transform: translateX(3px);
+  }
     transform: translateY(-1px);
     box-shadow: 0 6px 16px rgba(0,0,0,0.1);
   }
@@ -1090,11 +1104,14 @@
         </div>
       </div>
 
-      <div id="gps-coords-display" style="font-size:11px; color:var(--primary); margin-bottom:8px; display:none; padding:8px 10px; background:#f0fdf9; border-radius:6px; font-weight: 600;">
-        📡 Location locked
-      </div>
+      <!-- Dynamic Intermediate Waypoints / Midpoints Container -->
+      <div id="waypoints-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      
+      <button type="button" onclick="addWaypointInput()" style="background: #f0fdf9; border: 1px dashed #10b981; border-radius: 8px; padding: 6px 12px; font-size: 11px; font-weight: 700; color: #10b981; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 8px 0; width: 100%; transition: all 0.2s;" onmouseover="this.style.background='#ecfdf5';" onmouseout="this.style.background='#f0fdf9';">
+        ➕ Add Stop / Midpoint
+      </button>
 
-      <div class="panel-label" style="margin-top:10px;">To</div>
+      <div class="panel-label" style="margin-top:6px;">To</div>
       <div class="autocomplete-wrap">
         <span class="input-icon">🎯</span>
         <input class="loc-input" id="destination-input" placeholder="Enter destination..." autocomplete="off" />
@@ -1135,16 +1152,16 @@
   </div>
 
   <div class="right-map-area">
-    <!-- POI Quick Filters -->
-    <div class="poi-categories-bar">
+    <!-- POI Sidebar Toolbar (Vertical Left Side of Map) -->
+    <div class="poi-categories-bar" id="poi-sidebar-bar">
+      <button class="poi-btn" onclick="searchNearby('fuel', event)">
+        ⛽ Petrol Pumps
+      </button>
       <button class="poi-btn" onclick="searchNearby('restaurant', event)">
         🍴 Restaurants
       </button>
       <button class="poi-btn" onclick="searchNearby('hotel', event)">
         🏨 Hotels
-      </button>
-      <button class="poi-btn" onclick="searchNearby('fuel', event)">
-        ⛽ Petrol Pumps
       </button>
       <button class="poi-btn" onclick="searchNearby('hospital', event)">
         🏥 Hospitals
@@ -1154,6 +1171,47 @@
       </button>
     </div>
     <div id="map"></div>
+
+    <!-- Navigation HUD Card Overlay (Image 1) -->
+    <div id="nav-hud-card" style="position: absolute; top: calc(16px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); width: 92%; max-width: 440px; background: #005b5c; border-radius: 18px; padding: 14px 18px; display: none; z-index: var(--z-nav-hud, 40); box-shadow: 0 10px 25px rgba(0,0,0,0.4); color: #fff; text-align: left; transition: all 0.3s ease;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 14px; flex: 1;">
+          <!-- Navigation Direction Icon (Left) -->
+          <div id="nav-hud-icon-container" style="display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; height: 36px; background: rgba(255,255,255,0.15); border-radius: 10px;">
+            <svg id="nav-hud-direction-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 3L4 11H9V21H15V11H20L12 3Z" fill="#ffffff"/>
+            </svg>
+          </div>
+          <!-- Instruction & Remaining Meta (Center) -->
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <div id="nav-hud-instruction-text" style="font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #ffffff; letter-spacing: -0.3px; line-height: 1.2;">
+              Navigation Active
+            </div>
+            <div id="nav-hud-meta" style="font-size: 12px; color: rgba(255,255,255,0.78); font-weight: 600;">
+              Calculating remaining distance...
+            </div>
+          </div>
+        </div>
+        
+        <!-- Chatbot AI Sparkle Circular Button (Right) -->
+        <button onclick="const cb = document.getElementById('chatbot-fab'); if(cb) cb.click();" style="background: #ffffff; border: none; border-radius: 50%; width: 44px; height: 44px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.25); flex-shrink: 0; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.08)';" onmouseout="this.style.transform='none';" title="AI Assistant">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L14.8 9.2L22 12L14.8 14.8L12 22L9.2 14.8L2 12L9.2 9.2L12 2Z" fill="#1a73e8"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Bottom Control Bar (Speed, Sim Route, Exit Nav) -->
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 10px; margin-top: 10px;">
+        <div id="nav-hud-live-speed" style="font-size: 12px; font-weight: 800; color: #4ade80; background: rgba(74, 222, 128, 0.15); padding: 3px 8px; border-radius: 6px;">0 km/h</div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: rgba(255,255,255,0.85); cursor: pointer; user-select: none; font-weight: 600;">
+            <input type="checkbox" id="sim-route-checkbox" onchange="toggleRouteSimulation()" style="margin: 0; cursor: pointer;"/> Sim Route
+          </label>
+          <button onclick="stopNavigation()" style="background: #ef4444; color: white; border: none; border-radius: 20px; padding: 5px 14px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">Exit Nav</button>
+        </div>
+      </div>
+    </div>
     <!-- Compass Widget -->
     <div class="compass-widget" id="compass-widget" onclick="resetMapNorth()" title="Click to reset North">
       <svg class="compass-needle" id="compass-needle" width="36" height="36" viewBox="0 0 36 36" fill="none">
@@ -1170,6 +1228,45 @@
         <circle cx="18" cy="18" r="2.5" fill="#fff" stroke="#94a3b8" stroke-width="1"/>
       </svg>
     </div>
+    <!-- Map Layers Controller (Bottom Left) -->
+    <div id="map-layers-widget" style="position: absolute; bottom: 30px; left: 16px; z-index: var(--z-map-controls, 20); display: flex; flex-direction: column; align-items: flex-start;">
+      <!-- Round Toggle Button -->
+      <button onclick="toggleLayersMenu()" id="layers-toggle-btn" style="background: #0f172a; color: white; border: 1px solid rgba(255,255,255,0.15); border-radius: 50%; width: 48px; height: 48px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.4); transition: all 0.2s;" onmouseover="this.style.background='#10b981'; this.style.transform='scale(1.05)';" onmouseout="this.style.background='#0f172a'; this.style.transform='scale(1)';" title="Map Layers & Styles">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 17L12 22L22 17" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12L12 17L22 12" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      
+      <!-- Expandable Layers Selection Panel -->
+      <div id="layers-selection-panel" style="display: none; position: absolute; bottom: 60px; left: 0; width: 260px; background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(12px); border: 1.5px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); flex-direction: column; gap: 12px; z-index: 100; text-align: left;">
+        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Map Types</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <button onclick="selectMapStyle('streets-v12', this)" class="layer-style-btn active" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1.5px solid #10b981; border-radius: 6px; padding: 6px; font-size: 10px; font-weight: 700; cursor: pointer; text-align: center;">Streets</button>
+          <button onclick="selectMapStyle('satellite-streets-v12', this)" class="layer-style-btn" style="background: rgba(255,255,255,0.03); color: #cbd5e1; border: 1.5px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px; font-size: 10px; font-weight: 600; cursor: pointer; text-align: center;">Satellite</button>
+          <button onclick="selectMapStyle('dark-v11', this)" class="layer-style-btn" style="background: rgba(255,255,255,0.03); color: #cbd5e1; border: 1.5px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px; font-size: 10px; font-weight: 600; cursor: pointer; text-align: center;">Dark Mode</button>
+          <button onclick="selectMapStyle('outdoors-v12', this)" class="layer-style-btn" style="background: rgba(255,255,255,0.03); color: #cbd5e1; border: 1.5px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px; font-size: 10px; font-weight: 600; cursor: pointer; text-align: center;">Terrain 3D</button>
+        </div>
+        <div style="height: 1px; background: rgba(255,255,255,0.06);"></div>
+        <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.05em;">Map Overlays</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <label style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #cbd5e1; cursor: pointer;">
+            <span>Show Live Traffic</span>
+            <input type="checkbox" id="traffic-overlay-checkbox" onchange="toggleTrafficOverlay(this.checked)" style="cursor: pointer; width: 14px; height: 14px;">
+          </label>
+          <label style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #cbd5e1; cursor: pointer;">
+            <span>3D Buildings</span>
+            <input type="checkbox" id="buildings-3d-checkbox" onchange="toggle3DBuildings(this.checked)" style="cursor: pointer; width: 14px; height: 14px;">
+          </label>
+          <label style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #cbd5e1; cursor: pointer;">
+            <span>3D Terrain Elevation</span>
+            <input type="checkbox" id="terrain-elevation-checkbox" onchange="toggle3DTerrain(this.checked)" style="cursor: pointer; width: 14px; height: 14px;">
+          </label>
+        </div>
+      </div>
+    </div>
+
     <div class="map-controls">
       <button class="map-ctrl-btn" onclick="toggleNightMode()" id="night-btn">🌙 Night Mode</button>
       <button class="map-ctrl-btn" id="nav-toggle-btn" onclick="toggleNavigation()" style="display:none; background:var(--primary); color:#fff; border-color:var(--primary);">
@@ -1979,11 +2076,111 @@ let partnerFuelStationMarkers = [];
 
   // ─── TRIP STOPS & GEOGRAPHIC DISTANCE HELPERS ──────────
   const tripStops = [];
+  const tripItineraryStops = [];
   {% if trip and trip.stops %}
     {% for s in trip.stops %}
       tripStops.push("{{ s.place_name }}");
+      tripItineraryStops.push({
+        id: {{ s.id }},
+        day: {{ s.day or 1 }},
+        time_slot: {{ (s.time_slot or 'morning')|tojson }},
+        place_name: {{ (s.place_name or '')|tojson }},
+        place_type: {{ (s.place_type or 'sightseeing')|tojson }},
+        estimated_cost_inr: {{ s.estimated_cost_inr or 0 }},
+        duration_mins: {{ s.duration_mins or 60 }},
+        lat: {{ s.lat or 'null' }},
+        lon: {{ s.lon or 'null' }}
+      });
     {% endfor %}
   {% endif %}
+
+  function renderItineraryInLeftPanel() {
+    const wrap = document.getElementById('directions-wrap');
+    if (!wrap) return;
+
+    if (tripItineraryStops && tripItineraryStops.length > 0) {
+      const daysMap = {};
+      tripItineraryStops.forEach(stop => {
+        const d = stop.day || 1;
+        if (!daysMap[d]) daysMap[d] = [];
+        daysMap[d].push(stop);
+      });
+
+      const slotIcons = {
+        morning: '🌅 Morning',
+        afternoon: '☀️ Afternoon',
+        evening: '🌆 Evening',
+        night: '🌙 Night'
+      };
+
+      let html = `
+        <div class="dir-header" style="background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 16px;">
+          <div style="font-size: 13px; font-weight: 800; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; justify-content: space-between;">
+            <span>✨ AI Trip Itinerary</span>
+            <span style="font-size: 11px; color: #10b981; font-weight: 700;">${tripItineraryStops.length} Places</span>
+          </div>
+        </div>
+        <div style="padding: 12px; display: flex; flex-direction: column; gap: 12px;">
+      `;
+
+      Object.keys(daysMap).sort((a,b) => a - b).forEach(dayNum => {
+        html += `
+          <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.03);">
+            <div style="font-size: 12px; font-weight: 800; color: #10b981; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+              <span>🗓️ Day ${dayNum}</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+        `;
+
+        daysMap[dayNum].forEach(stop => {
+          const slotLabel = slotIcons[stop.time_slot] || '📍 Stop';
+          const lat = stop.lat;
+          const lon = stop.lon;
+          const flyBtn = (lat && lon && lat !== 'null') ? `
+            <button onclick="if(map){ map.flyTo({center: [${lon}, ${lat}], zoom: 14}); }" style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px 8px; font-size: 10px; font-weight: 700; color: #334155; cursor: pointer; display: flex; align-items: center; gap: 4px; margin-top: 6px;" onmouseover="this.style.background='#e2e8f0';" onmouseout="this.style.background='#f1f5f9';">
+              🎯 View on Map
+            </button>
+          ` : '';
+
+          html += `
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <span style="font-size: 10.5px; font-weight: 700; color: #64748b; text-transform: uppercase;">${slotLabel}</span>
+                <span style="font-size: 10.5px; font-weight: 700; color: #10b981;">₹${stop.estimated_cost_inr || 0}</span>
+              </div>
+              <div style="font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 2px;">📍 ${stop.place_name}</div>
+              <div style="font-size: 11px; color: #64748b; display: flex; align-items: center; gap: 10px;">
+                <span>⏳ ${stop.duration_mins || 60} mins</span>
+                <span style="text-transform: capitalize;">🏷️ ${stop.place_type || 'attraction'}</span>
+              </div>
+              ${flyBtn}
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+        `;
+      });
+
+      html += `</div>`;
+      wrap.innerHTML = html;
+    } else {
+      wrap.innerHTML = `
+        <div style="margin: 16px; padding: 20px; text-align: center; background: #ffffff; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+          <div style="font-size: 36px; margin-bottom: 8px;">✨</div>
+          <div style="font-weight: 800; font-size: 14px; color: #0f172a; margin-bottom: 4px;">AI Trip Itinerary</div>
+          <div style="font-size: 12px; color: #64748b; margin-bottom: 16px; line-height: 1.4;">
+            No day-by-day itinerary generated for this route yet. Create your custom AI itinerary to view day plans here!
+          </div>
+          <a href="/plan-trip" style="display: inline-flex; align-items: center; gap: 6px; background: #10b981; color: white; padding: 10px 18px; border-radius: 24px; font-size: 12px; font-weight: 700; text-decoration: none; box-shadow: 0 4px 12px rgba(16,185,129,0.3);">
+            ✨ Generate AI Itinerary
+          </a>
+        </div>
+      `;
+    }
+  }
 
   function getDistanceKm(lat1, lon1, lat2, lon2) {
     // Haversine formula — no Leaflet dependency
@@ -2274,6 +2471,130 @@ async function loadPartnerFuelStationsOnMap() {
     }, 5000);
   }
 
+  // ─── MAP STYLE & LAYERS CONTROLLER ──────────────────────
+  let currentStyleId = 'streets-v12';
+
+  function toggleLayersMenu() {
+    const panel = document.getElementById('layers-selection-panel');
+    if (panel) {
+      panel.style.display = (panel.style.display === 'flex') ? 'none' : 'flex';
+    }
+  }
+
+  function selectMapStyle(styleId, btn) {
+    currentStyleId = styleId;
+    const btns = document.querySelectorAll('.layer-style-btn');
+    btns.forEach(b => {
+      b.classList.remove('active');
+      b.style.background = 'rgba(255,255,255,0.03)';
+      b.style.color = '#cbd5e1';
+      b.style.borderColor = 'rgba(255,255,255,0.1)';
+    });
+    if (btn) {
+      btn.classList.add('active');
+      btn.style.background = 'rgba(16, 185, 129, 0.1)';
+      btn.style.color = '#10b981';
+      btn.style.borderColor = '#10b981';
+    }
+    if (map) {
+      map.setStyle(`mapbox://styles/mapbox/${styleId}`);
+    }
+  }
+
+  function toggleTrafficOverlay(checked) {
+    if (!map) return;
+    if (checked) {
+      try {
+        if (!map.getSource('mapbox-traffic')) {
+          map.addSource('mapbox-traffic', {
+            type: 'vector',
+            url: 'mapbox://mapbox.mapbox-traffic-v1'
+          });
+        }
+        const layers = [
+          { id: 'traffic-low', filter: ['==', 'congestion', 'low'], color: '#22c55e' },
+          { id: 'traffic-moderate', filter: ['==', 'congestion', 'moderate'], color: '#eab308' },
+          { id: 'traffic-heavy', filter: ['==', 'congestion', 'heavy'], color: '#f97316' },
+          { id: 'traffic-severe', filter: ['==', 'congestion', 'severe'], color: '#ef4444' }
+        ];
+        layers.forEach(layer => {
+          if (!map.getLayer(layer.id)) {
+            map.addLayer({
+              id: layer.id,
+              type: 'line',
+              source: 'mapbox-traffic',
+              'source-layer': 'traffic',
+              filter: layer.filter,
+              paint: {
+                'line-color': layer.color,
+                'line-width': 3,
+                'line-opacity': 0.8
+              }
+            });
+          }
+        });
+      } catch(e) { console.warn(e); }
+    } else {
+      ['traffic-low', 'traffic-moderate', 'traffic-heavy', 'traffic-severe'].forEach(id => {
+        if (map.getLayer(id)) map.removeLayer(id);
+      });
+      if (map.getSource('mapbox-traffic')) map.removeSource('mapbox-traffic');
+    }
+  }
+
+  function toggle3DBuildings(checked) {
+    if (!map) return;
+    if (checked) {
+      try {
+        const layers = map.getStyle().layers;
+        let labelLayerId;
+        for (let i = 0; i < layers.length; i++) {
+          if (layers[i].type === 'symbol' && layers[i].layout && layers[i].layout['text-field']) {
+            labelLayerId = layers[i].id;
+            break;
+          }
+        }
+        if (!map.getLayer('3d-buildings')) {
+          map.addLayer({
+            'id': '3d-buildings',
+            'source': 'composite',
+            'source-layer': 'building',
+            'filter': ['==', 'extrude', 'true'],
+            'type': 'fill-extrusion',
+            'minzoom': 15,
+            'paint': {
+              'fill-extrusion-color': '#aaa',
+              'fill-extrusion-height': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'height']],
+              'fill-extrusion-base': ['interpolate', ['linear'], ['zoom'], 15, 0, 15.05, ['get', 'min_height']],
+              'fill-extrusion-opacity': 0.6
+            }
+          }, labelLayerId);
+        }
+      } catch(e) { console.warn(e); }
+    } else {
+      if (map.getLayer('3d-buildings')) map.removeLayer('3d-buildings');
+    }
+  }
+
+  function toggle3DTerrain(checked) {
+    if (!map) return;
+    if (checked) {
+      try {
+        if (!map.getSource('mapbox-dem')) {
+          map.addSource('mapbox-dem', {
+            'type': 'raster-dem',
+            'url': 'mapbox://mapbox.mapbox-terrain-dem-v1',
+            'tileSize': 512,
+            'maxzoom': 14
+          });
+        }
+        map.setTerrain({ 'source': 'mapbox-dem', 'exaggeration': 1.5 });
+      } catch(e) { console.warn(e); }
+    } else {
+      map.setTerrain(null);
+    }
+  }
+
   // ─── INIT MAP ────────────────────────────────────────────
   function initMap() {
     mapboxgl.accessToken = '{{ MAPBOX_ACCESS_TOKEN }}';
@@ -2315,6 +2636,14 @@ async function loadPartnerFuelStationsOnMap() {
 
     map.on('style.load', () => {
       isMapStyleLoaded = true;
+
+      const terrainCheckbox = document.getElementById('terrain-elevation-checkbox');
+      if (terrainCheckbox && terrainCheckbox.checked) toggle3DTerrain(true);
+      const buildingsCheckbox = document.getElementById('buildings-3d-checkbox');
+      if (buildingsCheckbox && buildingsCheckbox.checked) toggle3DBuildings(true);
+      const trafficCheckbox = document.getElementById('traffic-overlay-checkbox');
+      if (trafficCheckbox && trafficCheckbox.checked) toggleTrafficOverlay(true);
+
       if (activeLayers && activeLayers.length > 0) {
         const savedLayers = [...activeLayers];
         activeLayers = [];
@@ -3187,9 +3516,9 @@ async function loadPartnerFuelStationsOnMap() {
         routeSourceIds.push(srcId);
         routeLayerIds.push(layId);
         activeLayers.push({ data, color, weight, opacity, dashArray });
+        return layId;
       } catch (err) {
         console.error("Failed to add route layer to Mapbox:", err);
-        alert("Mapbox addRouteLayer Error: " + err.message + "\nStack: " + err.stack);
       }
     });
   }
@@ -4245,19 +4574,94 @@ async function loadPartnerFuelStationsOnMap() {
     document.getElementById("seat-select-overlay").classList.remove("show");
   }
 
-  // ─── CAR ROUTING ─────────────────────────────────────────
+  // ─── CAR ROUTING & MULTI-WAYPOINT SUPPORT ─────────────────
+  let loadedCarRoutes = [];
+  let activeCarRouteIndex = 0;
+  let midpoints = [];
+  let midpointCounter = 0;
+
+  function escapeHTML(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function addWaypointInput(initialValue = '', initialCoords = null) {
+    midpointCounter++;
+    const id = midpointCounter;
+    midpoints.push({ id, value: initialValue, coords: initialCoords });
+    renderWaypointInputs();
+    checkEnableRouteBtn();
+  }
+
+  function removeWaypointInput(id) {
+    midpoints = midpoints.filter(m => m.id !== id);
+    renderWaypointInputs();
+    checkEnableRouteBtn();
+    const destInput = document.getElementById('destination-input');
+    if (destInput && destInput.value.trim()) {
+      getRoutes();
+    }
+  }
+
+  function renderWaypointInputs() {
+    const container = document.getElementById('waypoints-container');
+    if (!container) return;
+    container.innerHTML = midpoints.map((m, idx) => `
+      <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+        <div class="autocomplete-wrap" style="flex: 1;">
+          <span class="input-icon">📍</span>
+          <input class="loc-input" id="midpoint-input-${m.id}" value="${escapeHTML(m.value)}" placeholder="Stop ${idx + 1} (e.g. Ajmer)..." autocomplete="off" />
+          <div class="autocomplete-dropdown" id="ac-midpoint-${m.id}"></div>
+        </div>
+        <button type="button" onclick="removeWaypointInput(${m.id})" style="background: #fef2f2; border: 1px solid #fca5a5; color: #ef4444; border-radius: 8px; width: 34px; height: 34px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0;" title="Remove stop">&times;</button>
+      </div>
+    `).join('');
+
+    midpoints.forEach(m => {
+      setupAutocomplete(`midpoint-input-${m.id}`, `ac-midpoint-${m.id}`, (result) => {
+        m.value = result.name || result.place_name || '';
+        m.coords = [result.lon, result.lat];
+        const input = document.getElementById(`midpoint-input-${m.id}`);
+        if (input) input.value = m.value;
+        checkEnableRouteBtn();
+        getRoutes();
+      });
+    });
+  }
+
   function drawCarRoute(origin, dest, destName, isNavUpdate = false) {
     if (!isNavUpdate) {
       clearRouting();
 
-      const destEl = document.createElement('div');
-      destEl.innerHTML = `<div style="background:#ef4444;color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:700;box-shadow:0 2px 4px rgba(0,0,0,0.2);white-space:nowrap;">🎯 ${destName}</div>`;
-      const destMarker = new mapboxgl.Marker({ element: destEl }).setLngLat([dest.lon, dest.lat]).addTo(map);
-      stopMarkers.push(destMarker);
+      const allWaypoints = [
+        { name: "Origin", coords: [origin.lon, origin.lat] },
+        ...midpoints.filter(m => m.coords).map((m, i) => ({ name: m.value || `Stop ${i+1}`, coords: m.coords })),
+        { name: destName, coords: [dest.lon, dest.lat] }
+      ];
+
+      allWaypoints.forEach((wp, idx) => {
+        const isEnd = idx === allWaypoints.length - 1;
+        const el = document.createElement('div');
+        if (isEnd) {
+          el.innerHTML = `<div style="background:#ef4444;color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;font-weight:700;box-shadow:0 2px 4px rgba(0,0,0,0.2);white-space:nowrap;">🎯 ${destName}</div>`;
+        } else if (idx > 0) {
+          el.innerHTML = `<div style="background:#ffffff;border:2px solid #2563eb;color:#2563eb;padding:3px 7px;border-radius:6px;font-size:10px;font-weight:800;box-shadow:0 2px 6px rgba(0,0,0,0.15);white-space:nowrap;">📍 Stop ${idx}</div>`;
+        } else {
+          return;
+        }
+        const m = new mapboxgl.Marker({ element: el }).setLngLat(wp.coords).addTo(map);
+        stopMarkers.push(m);
+      });
     }
 
-    // Use Mapbox Directions API for traffic-aware routing (free tier)
-    const url = `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${origin.lon},${origin.lat};${dest.lon},${dest.lat}?alternatives=true&geometries=geojson&overview=full&steps=true&annotations=congestion&access_token=${mapboxgl.accessToken}`;
+    const waypointCoords = [
+      `${origin.lon},${origin.lat}`,
+      ...midpoints.filter(m => m.coords).map(m => `${m.coords[0]},${m.coords[1]}`),
+      `${dest.lon},${dest.lat}`
+    ];
+    const coordsStr = waypointCoords.join(';');
+
+    const url = `https://api.mapbox.com/directions/v5/mapbox/driving-traffic/${coordsStr}?alternatives=true&geometries=geojson&overview=full&steps=true&annotations=congestion&access_token=${mapboxgl.accessToken}`;
 
     fetch(url)
       .then(res => res.json())
@@ -4267,128 +4671,195 @@ async function loadPartnerFuelStationsOnMap() {
           return;
         }
 
-        // Atomically remove only the previous route layers just before drawing the new ones
-        removeRouteLayer();
+        loadedCarRoutes = data.routes;
+        activeCarRouteIndex = 0;
 
-        // Draw alternative routes first (gray)
-        for (let i = 1; i < data.routes.length; i++) {
-          addRouteLayer(data.routes[i].geometry.coordinates, '#94a3b8', 5, 0.6);
-        }
+        drawAllCarRoutesOnMap(loadedCarRoutes, activeCarRouteIndex, isNavUpdate);
+        selectCarRoute(0);
 
-        // Draw primary route
-        const primary = data.routes[0];
-        
-        // 1. ALWAYS draw base solid blue line to guarantee route is shown
-        addRouteLayer(primary.geometry.coordinates, '#2563eb', 8, 0.9);
-
-        // 2. Overlay traffic segments if congestion annotations exist
-        if (primary.legs && primary.legs[0] && primary.legs[0].annotation && primary.legs[0].annotation.congestion) {
-          const leg = primary.legs[0];
-          const coordinates = primary.geometry.coordinates;
-          const features = [];
-          let currentCoords = [coordinates[0]];
-          let currentCongestion = leg.annotation.congestion[0] || 'low';
-
-          for (let i = 0; i < leg.annotation.congestion.length; i++) {
-            const congestion = leg.annotation.congestion[i] || 'low';
-            const coord = coordinates[i+1];
-            if (congestion === currentCongestion) {
-              currentCoords.push(coord);
-            } else {
-              features.push({
-                type: 'Feature',
-                properties: { congestion: currentCongestion },
-                geometry: { type: 'LineString', coordinates: currentCoords }
-              });
-              currentCoords = [coordinates[i], coord];
-              currentCongestion = congestion;
-            }
-          }
-          if (currentCoords.length > 1) {
-            features.push({
-              type: 'Feature',
-              properties: { congestion: currentCongestion },
-              geometry: { type: 'LineString', coordinates: currentCoords }
-            });
-          }
-
-          const trafficRouteData = {
-            type: 'FeatureCollection',
-            features: features
-          };
-          
-          // Draw traffic segments with slightly narrower width (4px) on top of the 8px blue casing
-          addRouteLayer(trafficRouteData, 'traffic', 4, 1.0);
-        }
-
-        currentPolyline = primary.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0], lon: c[0] }));
-
-        const distKm = (primary.distance / 1000).toFixed(1);
-        const durHrs  = Math.floor(primary.duration / 3600);
-        const durMins = Math.floor((primary.duration % 3600) / 60);
-
-        // Build instructions from steps
-        const instructions = [];
-        if (primary.legs) {
-          primary.legs.forEach(leg => {
-            if (leg.steps) {
-              leg.steps.forEach(step => {
-                instructions.push({
-                  text: step.maneuver.instruction || step.name || '',
-                  distance: step.distance,
-                  type: step.maneuver.type || ''
-                });
-              });
-            }
-          });
-        }
-
-        renderCarDirections(instructions, distKm, durHrs, durMins);
         document.getElementById('nav-toggle-btn').style.display = 'block';
         setTimeout(() => map.resize(), 100);
-        
-        if (!isNavUpdate) {
-          loadPartnerRestaurantsOnMap();
-          // Only zoom-fit the camera bounds if we are not actively tracking GPS navigation
-          const bounds = new mapboxgl.LngLatBounds();
-          primary.geometry.coordinates.forEach(c => bounds.extend(c));
-          map.fitBounds(bounds, { padding: 50 });
-        }
       })
       .catch(err => {
         console.error('Mapbox Directions error:', err);
         showDirEmpty('Failed to get driving directions.');
       });
-
-    setTimeout(() => map.resize(), 300);
   }
 
-  function renderCarDirections(instructions, distKm, durHrs, durMins) {
-    const wrap = document.getElementById('directions-wrap');
-    const durStr = durHrs > 0 ? `${durHrs}h ${durMins}m` : `${durMins}m`;
-    wrap.innerHTML = `
-      <div class="dir-header">
-        <span class="dir-header-title">Turn-by-Turn Directions</span>
-        <span class="route-meta">${distKm} km · ${durStr}</span>
-      </div>
-      ${instructions.map((step, i) => `
-        <div class="dir-step">
-          <div class="dir-step-num">${i+1}</div>
-          <div>
-            <div class="dir-step-text">${step.text}</div>
-            <div class="dir-step-dist">${step.distance > 1000 ? (step.distance/1000).toFixed(1)+' km' : Math.round(step.distance)+' m'}</div>
-          </div>
-        </div>
-      `).join('')}
-    `;
+  function drawAllCarRoutesOnMap(routes, activeIndex, isNavUpdate = false) {
+    if (!map || !routes || routes.length === 0) return;
+    removeRouteLayer();
 
-    // Smoothly scroll to the directions header
-    setTimeout(() => {
-      const header = wrap.querySelector('.dir-header');
-      if (header) {
-        header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // 1. Draw inactive alternative routes first (in gray)
+    routes.forEach((route, idx) => {
+      if (idx !== activeIndex) {
+        addRouteLayer(route.geometry.coordinates, '#94a3b8', 5, 0.5);
       }
-    }, 150);
+    });
+
+    // 2. Draw active primary route on top (in blue)
+    const activeRoute = routes[activeIndex];
+    if (activeRoute && activeRoute.geometry) {
+      addRouteLayer(activeRoute.geometry.coordinates, '#2563eb', 8, 0.9);
+
+      // Overlay traffic congestion annotations if available
+      if (activeRoute.legs && activeRoute.legs[0] && activeRoute.legs[0].annotation && activeRoute.legs[0].annotation.congestion) {
+        const leg = activeRoute.legs[0];
+        const coordinates = activeRoute.geometry.coordinates;
+        const features = [];
+        let currentCoords = [coordinates[0]];
+        let currentCongestion = leg.annotation.congestion[0] || 'low';
+
+        for (let i = 0; i < leg.annotation.congestion.length; i++) {
+          const congestion = leg.annotation.congestion[i] || 'low';
+          const coord = coordinates[i+1];
+          if (congestion === currentCongestion) {
+            currentCoords.push(coord);
+          } else {
+            features.push({
+              type: 'Feature',
+              properties: { congestion: currentCongestion },
+              geometry: { type: 'LineString', coordinates: currentCoords }
+            });
+            currentCoords = [coordinates[i], coord];
+            currentCongestion = congestion;
+          }
+        }
+        if (currentCoords.length > 1) {
+          features.push({
+            type: 'Feature',
+            properties: { congestion: currentCongestion },
+            geometry: { type: 'LineString', coordinates: currentCoords }
+          });
+        }
+
+        const trafficRouteData = {
+          type: 'FeatureCollection',
+          features: features
+        };
+        addRouteLayer(trafficRouteData, 'traffic', 4, 1.0);
+      }
+    }
+
+    if (!isNavUpdate && activeRoute && activeRoute.geometry && activeRoute.geometry.coordinates) {
+      loadPartnerRestaurantsOnMap();
+      const bounds = new mapboxgl.LngLatBounds();
+      activeRoute.geometry.coordinates.forEach(c => bounds.extend(c));
+      map.fitBounds(bounds, { padding: 50 });
+    }
+  }
+
+  function selectCarRoute(idx) {
+    if (!loadedCarRoutes || !loadedCarRoutes[idx]) return;
+    activeCarRouteIndex = idx;
+    const selectedRoute = loadedCarRoutes[idx];
+
+    drawAllCarRoutesOnMap(loadedCarRoutes, activeCarRouteIndex, true);
+
+    currentPolyline = selectedRoute.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0], lon: c[0] }));
+
+    const distKm = (selectedRoute.distance / 1000).toFixed(1);
+    const durHrs = Math.floor(selectedRoute.duration / 3600);
+    const durMins = Math.floor((selectedRoute.duration % 3600) / 60);
+
+    const instructions = [];
+    if (selectedRoute.legs) {
+      selectedRoute.legs.forEach(leg => {
+        if (leg.steps) {
+          leg.steps.forEach(step => {
+            instructions.push({
+              text: step.maneuver.instruction || step.name || '',
+              distance: step.distance,
+              type: step.maneuver.type || ''
+            });
+          });
+        }
+      });
+    }
+
+    renderCarDirections(instructions, distKm, durHrs, durMins);
+    renderRouteSelectionPills(loadedCarRoutes, activeCarRouteIndex);
+  }
+
+  function renderRouteSelectionPills(routes, activeIndex) {
+    let pillsContainer = document.getElementById('route-selection-pills');
+    if (!pillsContainer) {
+      pillsContainer = document.createElement('div');
+      pillsContainer.id = 'route-selection-pills';
+      pillsContainer.style.cssText = 'position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 25; display: flex; gap: 8px; background: rgba(15,23,42,0.85); backdrop-filter: blur(10px); padding: 6px 10px; border-radius: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); max-width: 90%; overflow-x: auto;';
+      const mapArea = document.querySelector('.right-map-area');
+      if (mapArea) mapArea.appendChild(pillsContainer);
+    }
+    
+    // Hide pills when navigation is active
+    if (isNavigating) {
+      pillsContainer.style.display = 'none';
+      return;
+    }
+    
+    if (!routes || routes.length <= 1) {
+      pillsContainer.style.display = 'none';
+      return;
+    }
+
+    let minDurIdx = 0;
+    let minDur = Infinity;
+    let minDistIdx = 0;
+    let minDist = Infinity;
+
+    routes.forEach((r, i) => {
+      if (r.duration < minDur) {
+        minDur = r.duration;
+        minDurIdx = i;
+      }
+      if (r.distance < minDist) {
+        minDist = r.distance;
+        minDistIdx = i;
+      }
+    });
+
+    pillsContainer.style.display = 'flex';
+    pillsContainer.innerHTML = routes.map((r, idx) => {
+      const distKm = (r.distance / 1000).toFixed(1);
+      const durHrs = Math.floor(r.duration / 3600);
+      const durMins = Math.floor((r.duration % 3600) / 60);
+      const durStr = durHrs > 0 ? `${durHrs}h ${durMins}m` : `${durMins}m`;
+      const isActive = (idx === activeIndex);
+
+      let badgeTag = '';
+      if (idx === minDurIdx && idx === minDistIdx) {
+        badgeTag = ' (Fastest & Shortest)';
+      } else if (idx === minDurIdx) {
+        badgeTag = ' (Fastest)';
+      } else if (idx === minDistIdx) {
+        badgeTag = ' (Shortest)';
+      }
+
+      const label = `Route ${idx + 1}${badgeTag}`;
+
+      return `
+        <button onclick="selectCarRoute(${idx})" style="background: ${isActive ? '#10b981' : 'rgba(255,255,255,0.1)'}; color: #ffffff; border: 1px solid ${isActive ? '#10b981' : 'rgba(255,255,255,0.2)'}; border-radius: 14px; padding: 6px 12px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
+          <span>🚗 ${label}</span>
+          <span style="opacity: 0.85;">(${distKm} km • ${durStr})</span>
+        </button>
+      `;
+    }).join('');
+  }
+
+  let currentRouteInstructions = [];
+  function renderCarDirections(instructions, distKm, durHrs, durMins) {
+    currentRouteInstructions = instructions || [];
+    renderItineraryInLeftPanel();
+    
+    // Update initial HUD instruction text if available
+    if (instructions && instructions.length > 0) {
+      const firstStep = instructions[0];
+      const instEl = document.getElementById('nav-hud-instruction-text');
+      const metaEl = document.getElementById('nav-hud-meta');
+      const durStr = durHrs > 0 ? `${durHrs}h ${durMins}m` : `${durMins}m`;
+      if (instEl) instEl.textContent = firstStep.text || 'Drive to destination';
+      if (metaEl) metaEl.textContent = `${distKm} km left • ${durStr}`;
+    }
   }
 
   // ─── TRANSIT ROUTING ─────────────────────────────────────
@@ -4594,6 +5065,18 @@ async function loadPartnerFuelStationsOnMap() {
     prevGpsCoords = null;
     lastRouteUpdateCoords = null;
     document.getElementById('nav-toggle-btn').textContent = '🛑 Stop Navigation';
+    document.body.classList.add('nav-active');
+    
+    const hudCard = document.getElementById('nav-hud-card');
+    if (hudCard) {
+      hudCard.style.display = 'block';
+    }
+
+    const poiBar = document.getElementById('poi-sidebar-bar');
+    if (poiBar) {
+      poiBar.style.display = 'flex';
+    }
+    
     document.getElementById('nav-hud').classList.add('visible');
     document.getElementById('compass-widget').classList.add('visible');
 
@@ -4686,12 +5169,15 @@ async function loadPartnerFuelStationsOnMap() {
       }
       
       // Update speed display
+      let liveSpeedStr = '0 km/h';
       if (pos.coords.speed != null && pos.coords.speed > 0) {
         const speedKmh = Math.round(pos.coords.speed * 3.6);
-        document.getElementById('hud-speed').textContent = `${speedKmh} km/h`;
-      } else {
-        document.getElementById('hud-speed').textContent = '0 km/h';
+        liveSpeedStr = `${speedKmh} km/h`;
       }
+      document.getElementById('hud-speed').textContent = liveSpeedStr;
+      const hudLiveSpeed = document.getElementById('nav-hud-live-speed');
+      if (hudLiveSpeed) hudLiveSpeed.textContent = liveSpeedStr;
+
     }, (err) => console.warn(err), { enableHighAccuracy: true });
   }
 
@@ -4700,15 +5186,29 @@ async function loadPartnerFuelStationsOnMap() {
     prevGpsCoords = null;
     lastRouteUpdateCoords = null;
     userInteractedWithMap = false;
+    document.body.classList.remove('nav-active');
     if (reFocusTimeout) {
       clearTimeout(reFocusTimeout);
       reFocusTimeout = null;
     }
     document.getElementById('nav-toggle-btn').textContent = '🚀 Start Navigation';
+    
+    const hudCard = document.getElementById('nav-hud-card');
+    if (hudCard) {
+      hudCard.style.display = 'none';
+    }
+
+    const poiBar = document.getElementById('poi-sidebar-bar');
+    if (poiBar) {
+      poiBar.style.display = 'flex';
+    }
+    
     document.getElementById('nav-hud').classList.remove('visible');
     document.getElementById('compass-widget').classList.remove('visible');
     document.getElementById('hud-heading-dir').textContent = '—';
     document.getElementById('hud-speed').textContent = '0 km/h';
+    const hudLiveSpeed = document.getElementById('nav-hud-live-speed');
+    if (hudLiveSpeed) hudLiveSpeed.textContent = '0 km/h';
     if (trackWatchId !== null) {
       navigator.geolocation.clearWatch(trackWatchId);
       trackWatchId = null;
@@ -5200,6 +5700,7 @@ async function loadPartnerFuelStationsOnMap() {
 
   window.addEventListener('DOMContentLoaded', () => {
     initMap();
+    renderItineraryInLeftPanel();
 
     // Select the mode according to trip travel mode
     let initialMode = 'car';
