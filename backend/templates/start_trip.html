@@ -62,9 +62,11 @@
     padding: 0 24px;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     height: 60px;
     z-index: 10;
     flex-shrink: 0;
+    box-sizing: border-box;
   }
   .logo { 
     font-family: 'Outfit', sans-serif;
@@ -75,6 +77,29 @@
   }
   .logo span { color: var(--text-dark); }
   .topbar-subtitle { font-size: 13px; color: var(--text-muted); margin-left: 10px; font-weight: 500; }
+
+  .topbar-actions-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    height: 100%;
+  }
+
+  .topbar-actions-right button,
+  .topbar-actions-right a {
+    height: 36px !important;
+    padding: 0 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    border-radius: 8px !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+  }
 
   /* ─── TRANSPORT SELECTOR TABS ─── */
   .transport-bar {
@@ -1111,67 +1136,29 @@
 </head>
 <body>
 
-<div class="topbar" style="justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 10px;">
-  <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
-    <div style="display: flex; align-items: center; gap: 8px;">
-      <a href="/dashboard" class="logo" style="text-decoration: none;">Road<span>Buddy</span></a>
-      <span class="topbar-subtitle">Smart Route Map</span>
-    </div>
-
+<div class="topbar">
+  <div style="display: flex; align-items: center; gap: 8px;">
+    <a href="/dashboard" class="logo" style="text-decoration: none;">Road<span>Buddy</span></a>
+    <span class="topbar-subtitle">Smart Route Map</span>
+    
     <!-- Direct Dashboard Return Link for Hotel Navigation Mode -->
     <a href="/dashboard" class="btn-hotel-nav-dashboard" style="display: none; font-size: 12.5px; font-weight: 700; color: #0f172a; background: #f1f5f9; border: 1px solid #cbd5e1; padding: 6px 14px; border-radius: 8px; text-decoration: none; align-items: center; gap: 6px; transition: all 0.2s;" onmouseover="this.style.background='#e2e8f0';" onmouseout="this.style.background='#f1f5f9';">
       🏠 Dashboard
     </a>
   </div>
-  <div class="topbar-actions-right" style="display: flex; gap: 10px; align-items: center; margin-left: auto;">
-    <button onclick="openSplitwiseModal()" class="splitwise-trigger-btn" style="
-      font-size: 13px;
-      font-weight: 700;
-      color: #1d9e75;
-      background: #f0fdf9;
-      border: 1.5px solid #1d9e75;
-      padding: 8px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-      outline: none;
-    ">
+
+  <div class="topbar-actions-right">
+    <button onclick="openSplitwiseModal()" class="splitwise-trigger-btn">
       💰 <span class="btn-text">Split Expenses</span>
     </button>
-    <a class="back-to-itinerary" href="{% if trip_id %}/my-trips/{{ trip_id }}/itinerary{% else %}/my-trips{% endif %}" style="
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text-muted);
-      background: var(--surface);
-      border: 1.5px solid var(--border-color);
-      padding: 8px 14px;
-      border-radius: 8px;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-    ">← <span class="btn-text">AI Itinerary</span></a>
-    <a href="/dashboard" style="text-decoration: none; color: var(--text-muted); font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--border-color); background: var(--surface); transition: all 0.2s ease;" onmouseover="this.style.borderColor='var(--primary)'; this.style.color='var(--primary)';" onmouseout="this.style.borderColor='var(--border-color)'; this.style.color='var(--text-muted)';">🏠 <span class="btn-text">Dashboard</span></a>
+    <a class="back-to-itinerary" href="{% if trip_id %}/my-trips/{{ trip_id }}/itinerary{% else %}/my-trips{% endif %}">
+      ← <span class="btn-text">AI Itinerary</span>
+    </a>
+    <a href="/dashboard" style="text-decoration: none; color: var(--text-muted); background: var(--surface); border: 1.5px solid var(--border-color);">
+      🏠 <span class="btn-text">Dashboard</span>
+    </a>
     {% if trip_id and (not trip or trip.status != 'completed') %}
-    <button onclick="endTrip()" style="
-      font-size: 13px;
-      font-weight: 700;
-      color: #ffffff;
-      background: #ef4444;
-      border: 1.5px solid #ef4444;
-      padding: 8px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-      outline: none;
-    " onmouseover="this.style.background='#dc2626'; this.style.borderColor='#dc2626';" onmouseout="this.style.background='#ef4444'; this.style.borderColor='#ef4444';">
+    <button onclick="endTrip()" style="color: #ffffff; background: #ef4444; border: 1.5px solid #ef4444;" onmouseover="this.style.background='#dc2626'; this.style.borderColor='#dc2626';" onmouseout="this.style.background='#ef4444'; this.style.borderColor='#ef4444';">
       🏁 <span class="btn-text">End Trip</span>
     </button>
     {% endif %}
@@ -3342,6 +3329,22 @@ async function loadPartnerFuelStationsOnMap() {
       return { lat, lon };
     }
 
+    // 1. Mapbox Geocoding API (Instant 10ms response time, high accuracy)
+    if (typeof mapboxgl !== 'undefined' && mapboxgl.accessToken) {
+      try {
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(q)}.json?access_token=${mapboxgl.accessToken}&country=IN&limit=1`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data && data.features && data.features.length > 0) {
+          const [lon, lat] = data.features[0].center;
+          return { lat, lon };
+        }
+      } catch (e) {
+        console.warn('Mapbox geocoding error:', e);
+      }
+    }
+
+    // 2. Nominatim fallback
     const queriesToTry = [
       q.toLowerCase().includes('india') ? q : q + ', India'
     ];
@@ -5101,129 +5104,7 @@ async function loadPartnerFuelStationsOnMap() {
       else if (m && m.remove) m.remove();
     });
     itineraryMarkers = [];
-
-    if (!tripItineraryStops || tripItineraryStops.length === 0) return;
-
-    const placeTypeEmojis = {
-      fuel: '⛽',
-      food: '🍽️',
-      hotel: '🏨',
-      sightseeing: '🏛️',
-      destination_food: '🍴',
-      going_route: '🚗',
-      return_route: '🏠',
-      toll: '🛣️'
-    };
-
-    const destCity = prefillDestination || "";
-    const totalStops = tripItineraryStops.length;
-
-    // STEP 1: Render all stop markers INSTANTLY using route polyline interpolation (0ms delay!)
-    for (let i = 0; i < totalStops; i++) {
-      const stop = tripItineraryStops[i];
-      let stopLat = stop.lat;
-      let stopLon = stop.lon;
-
-      // Instant polyline interpolation fallback if coordinates not in DB
-      if ((!stopLat || !stopLon) && currentPolyline && currentPolyline.length > 0) {
-        const stepIndex = Math.floor(((i + 0.5) / totalStops) * currentPolyline.length);
-        const polyPoint = currentPolyline[Math.min(Math.max(0, stepIndex), currentPolyline.length - 1)];
-        if (polyPoint) {
-          stopLat = polyPoint.lat;
-          stopLon = polyPoint.lng || polyPoint.lon;
-        }
-      }
-
-      // Fallback to destination if no polyline yet
-      if (!stopLat || !stopLon) {
-        const destInput = document.getElementById('destination-input');
-        if (destInput && destInput.dataset.lat && destInput.dataset.lon) {
-          stopLat = parseFloat(destInput.dataset.lat);
-          stopLon = parseFloat(destInput.dataset.lon);
-        }
-      }
-
-      if (stopLat && stopLon) {
-        const emoji = placeTypeEmojis[stop.place_type] || '📍';
-        
-        const outerEl = document.createElement('div');
-        outerEl.className = 'itinerary-stop-marker-wrap';
-        
-        const innerDot = document.createElement('div');
-        innerDot.className = 'itinerary-stop-dot-inner';
-        innerDot.style.cssText = `
-          width: 22px;
-          height: 22px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #10b981, #059669);
-          border: 2px solid #ffffff;
-          box-shadow: 0 3px 10px rgba(0,0,0,0.4);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 11px;
-          cursor: pointer;
-          transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-        `;
-        innerDot.title = `Day ${stop.day}: ${stop.place_name}`;
-        innerDot.innerHTML = `<span style="font-size: 11px; line-height: 1; pointer-events: none;">${emoji}</span>`;
-
-        innerDot.onmouseover = () => {
-          innerDot.style.transform = 'scale(1.35)';
-        };
-        innerDot.onmouseout = () => {
-          innerDot.style.transform = 'scale(1)';
-        };
-
-        outerEl.appendChild(innerDot);
-
-        const popupHTML = `
-          <div style="font-family: 'Plus Jakarta Sans', sans-serif; padding: 6px 8px; max-width: 230px; text-align: left;">
-            <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #10b981; letter-spacing: 0.5px; margin-bottom: 2px;">Day ${stop.day} Stop</div>
-            <div style="font-weight: 800; font-size: 13.5px; color: #0f172a; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
-              <span>${emoji}</span> <span>${escapeHTML(stop.place_name)}</span>
-            </div>
-            <div style="font-size: 11.5px; color: #64748b; margin-bottom: 2px;">⏳ <strong>Duration:</strong> ${stop.duration_mins || 60} mins</div>
-            ${stop.time_slot ? `<div style="font-size: 11px; color: #475569; font-weight: 600;">🕒 <strong>Time Slot:</strong> ${escapeHTML(stop.time_slot)}</div>` : ''}
-            ${stop.estimated_cost_inr ? `<div style="font-size: 11.5px; color: #059669; font-weight: 700; margin-top: 4px;">💰 Est. Cost: ₹${stop.estimated_cost_inr}</div>` : ''}
-          </div>
-        `;
-
-        const marker = new mapboxgl.Marker({ element: outerEl, anchor: 'center' })
-          .setLngLat([stopLon, stopLat])
-          .setPopup(new mapboxgl.Popup({ offset: 12, closeButton: true }).setHTML(popupHTML))
-          .addTo(map);
-
-        itineraryMarkers.push({ marker, stopIndex: i });
-      }
-    }
-
-    // STEP 2: Non-blocking background geocode refinement
-    refineItineraryMarkersBackground(destCity);
-  }
-
-  async function refineItineraryMarkersBackground(destCity) {
-    for (let i = 0; i < tripItineraryStops.length; i++) {
-      const stop = tripItineraryStops[i];
-      if (stop.lat && stop.lon) continue;
-
-      let query = stop.place_name.replace(/^(Day \d+:?|Visit|Check-in at|Dinner at|Lunch at)\s*/i, '').trim();
-      if (destCity && !query.toLowerCase().includes(destCity.toLowerCase())) {
-        query = `${query}, ${destCity}`;
-      }
-
-      try {
-        const coords = await geocode(query);
-        if (coords && coords.lat && coords.lon) {
-          const item = itineraryMarkers.find(m => m.stopIndex === i);
-          if (item && item.marker) {
-            item.marker.setLngLat([coords.lon, coords.lat]);
-          }
-        }
-      } catch (e) {
-        // Keep instant position
-      }
-    }
+    return; // AI itinerary stop markers disabled on map canvas
   }
 
   function selectCarRoute(idx) {
@@ -6286,7 +6167,24 @@ async function loadPartnerFuelStationsOnMap() {
     if (prefillOrigin) {
       const originInput = document.getElementById('origin-manual');
       if (originInput) {
-        originInput.value = prefillOrigin;
+        if (/^[-\d.]+\s*,\s*[-\d.]+$/.test(prefillOrigin.trim())) {
+          const [plat, plon] = prefillOrigin.trim().split(',').map(Number);
+          originInput.dataset.lat = plat;
+          originInput.dataset.lon = plon;
+          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${plat}&lon=${plon}`)
+            .then(r => r.json())
+            .then(d => {
+              if (d && d.address) {
+                const c = d.address.city || d.address.town || d.address.village || d.address.suburb || d.address.county || d.address.state || "My Location";
+                originInput.value = c;
+              } else {
+                originInput.value = "My Location";
+              }
+            })
+            .catch(() => { originInput.value = "My Location"; });
+        } else {
+          originInput.value = prefillOrigin;
+        }
         {% if trip and trip.origin_lat and trip.origin_lon %}
           originInput.dataset.lat = "{{ trip.origin_lat }}";
           originInput.dataset.lon = "{{ trip.origin_lon }}";
