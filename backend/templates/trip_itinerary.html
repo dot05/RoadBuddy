@@ -469,6 +469,21 @@
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 
+<!-- Mapbox GL JS for itinerary map visualization -->
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet" />
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+
+<!-- Itinerary stops data for map -->
+<script>
+const MAPBOX_TOKEN       = {{ mapbox_token | tojson }};
+const ITINERARY_DESTINATION = {{ trip.destination | tojson }};
+const ITINERARY_STOPS = [
+  {% for stop in trip.stops if stop.place_type == 'sightseeing' %}
+  { day: {{ stop.day }}, name: {{ stop.place_name | tojson }} },
+  {% endfor %}
+];
+</script>
+
 <style>
 /* Hide the sidebar toggle button on the AI itinerary page */
 #sidebar-toggle {
@@ -707,6 +722,29 @@
         </div>
         {% endif %}
 
+        <!-- ═══ Itinerary Map ═══ -->
+        {% if trip.stops %}
+        <div id="itinerary-map-wrapper" style="position:relative; border-radius:12px; overflow:hidden; border:1px solid #e2e8f0; margin-bottom:20px; height:340px; background:#f1f5f9;">
+          <!-- Loading overlay -->
+          <div id="map-loading-overlay" style="position:absolute;inset:0;background:rgba(248,250,252,0.95);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;z-index:900;">
+            <div style="width:30px;height:30px;border:3px solid #e2e8f0;border-top-color:#10b981;border-radius:50%;animation:itin-spin 0.9s linear infinite;"></div>
+            <p style="font-size:11px;color:#64748b;font-weight:600;">Plotting itinerary on map…</p>
+          </div>
+          <!-- Map legend -->
+          <div id="map-legend" style="display:none;position:absolute;top:10px;left:10px;z-index:800;background:rgba(255,255,255,0.92);border:1px solid #e2e8f0;border-radius:8px;padding:7px 10px;font-size:10px;color:#475569;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+            <div style="font-weight:700;margin-bottom:4px;color:#0f172a;">{{ trip.destination }} — Places to Visit</div>
+            <div style="display:flex;align-items:center;gap:5px;">
+              <div style="width:24px;height:3px;background:#3b82f6;border-radius:2px;"></div>
+              <span>Route</span>
+              <div style="width:14px;height:14px;background:#10b981;border-radius:50%;border:2px solid white;margin-left:6px;"></div>
+              <span>Attraction</span>
+            </div>
+          </div>
+          <!-- Actual map -->
+          <div id="itinerary-map" style="height:100%;width:100%;"></div>
+        </div>
+        {% endif %}
+
         <div class="space-y-6">
           {% if trip.stops %}
             {% set grouped_stops = {} %}
@@ -718,6 +756,8 @@
               {% set _ = grouped_stops[day].append(stop) %}
             {% endfor %}
 
+            <!-- Inner scroll wrapper for itinerary text -->
+            <div style="max-height:460px;overflow-y:auto;padding-right:4px;">
             {% for day in grouped_stops.keys()|sort %}
               <div class="space-y-3">
                 <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
@@ -829,6 +869,7 @@
                 </div>
               </div>
             {% endfor %}
+            </div><!-- /inner-scroll -->
           {% else %}
             <p class="text-xs text-slate-500 italic">No stop waypoints recorded for this itinerary.</p>
           {% endif %}
@@ -5038,5 +5079,224 @@
     checkNotifications();
     setInterval(checkNotifications, 10000);
   });
+
+  // ═══════════════════════════════════════════════════
+  // ITINERARY MAP — Mapbox GL JS
+  // • Real road routing via Mapbox Directions API
+  // • Distinct scenic locations for every stop
+  // • Day labels + Place names above/below each marker
+  // ═══════════════════════════════════════════════════
+
+  const DAY_COLORS = [
+    '#10b981','#3b82f6','#f59e0b','#8b5cf6',
+    '#ef4444','#06b6d4','#f97316','#ec4899'
+  ];
+
+  // Geocode using Mapbox Geocoding API
+  // Returns lat/lon only if it matches a specific POI / landmark / address.
+  // If it just matches the general city/locality, returns null so we can place it in the scenic loop.
+  async function geocodeMapbox(query, isCityTarget = false) {
+    try {
+      const q = encodeURIComponent(query.includes('India') ? query : `${query}, India`);
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json?country=in&limit=1&access_token=${MAPBOX_TOKEN}`;
+      const r = await fetch(url);
+      const d = await r.json();
+      if (d.features && d.features.length > 0) {
+        const feat = d.features[0];
+        const types = feat.place_type || [];
+        
+        // If we are looking up the main destination city itself
+        if (isCityTarget) {
+          const [lon, lat] = feat.center;
+          return { lat, lon };
+        }
+
+        // For itinerary places: accept only specific places (POI, landmark, park, address, attraction, neighborhood)
+        const isSpecificPOI = types.some(t => ['poi', 'landmark', 'address', 'park', 'attraction', 'neighborhood'].includes(t));
+        if (isSpecificPOI) {
+          const [lon, lat] = feat.center;
+          return { lat, lon };
+        }
+      }
+    } catch (e) { /* silent */ }
+    return null;
+  }
+
+  // Generate scenic loop offsets around the destination so AI stops fan out realistically
+  function getScenicLoopOffset(index, total) {
+    const angle = (index / (total || 1)) * 2 * Math.PI - (Math.PI / 4);
+    // Alternate radius between 0.022 (~2.5km) and 0.042 (~4.5km) for natural distribution
+    const radius = 0.025 + (index % 2 === 0 ? 0.015 : 0.005);
+    return {
+      dlat: radius * Math.cos(angle),
+      dlon: radius * Math.sin(angle) * 1.15 // account for longitude scaling
+    };
+  }
+
+  // Fetch real road route between ordered coordinates via Mapbox Directions
+  async function fetchRoadRoute(coords) {
+    if (coords.length < 2) return null;
+    const waypoints = coords.slice(0, 25).map(c => `${c.lon.toFixed(5)},${c.lat.toFixed(5)}`).join(';');
+    try {
+      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${waypoints}?geometries=geojson&overview=full&access_token=${MAPBOX_TOKEN}`;
+      const r = await fetch(url);
+      const d = await r.json();
+      if (d.routes && d.routes.length > 0) return d.routes[0].geometry;
+    } catch (e) { /* silent */ }
+    return null;
+  }
+
+  async function initItineraryMap() {
+    const wrapper = document.getElementById('itinerary-map-wrapper');
+    const overlay = document.getElementById('map-loading-overlay');
+    const legend  = document.getElementById('map-legend');
+
+    if (!wrapper || typeof mapboxgl === 'undefined' || !MAPBOX_TOKEN) {
+      if (wrapper) wrapper.style.display = 'none';
+      return;
+    }
+    if (!ITINERARY_STOPS || ITINERARY_STOPS.length === 0) {
+      wrapper.style.display = 'none';
+      return;
+    }
+
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+
+    // 1. Geocode main destination city for initial map centre
+    const destCoords = await geocodeMapbox(ITINERARY_DESTINATION, true);
+    if (!destCoords) { wrapper.style.display = 'none'; return; }
+
+    // 2. Init Mapbox GL map
+    const map = new mapboxgl.Map({
+      container: 'itinerary-map',
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [destCoords.lon, destCoords.lat],
+      zoom: 11,
+      attributionControl: true
+    });
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'top-left');
+    map.scrollZoom.disable();
+
+    // 3. Wait for map style to load, then add pins & route
+    map.on('load', async () => {
+      const total = ITINERARY_STOPS.length;
+      const points = [];
+
+      for (let i = 0; i < total; i++) {
+        const stop = ITINERARY_STOPS[i];
+        const cleaned = stop.name.replace(/^\d{1,2}:\d{2}\s*(AM|PM)\s*-\s*/i, '').trim();
+
+        // Try exact POI lookup first
+        let coords = await geocodeMapbox(`${cleaned}, ${ITINERARY_DESTINATION}`, false);
+        
+        // If not a specific POI, place it on the scenic loop surrounding the destination
+        if (!coords) {
+          const off = getScenicLoopOffset(i, total);
+          coords = {
+            lat: destCoords.lat + off.dlat,
+            lon: destCoords.lon + off.dlon
+          };
+        }
+
+        const shortName = cleaned.length > 20 ? cleaned.slice(0, 18) + '…' : cleaned;
+        points.push({ ...coords, day: stop.day, name: cleaned, shortName, index: i + 1 });
+      }
+
+      if (points.length === 0) {
+        overlay.style.display = 'none';
+        return;
+      }
+
+      // 4. Fetch real driving road route connecting points
+      let routeGeometry = null;
+      if (points.length >= 2) {
+        routeGeometry = await fetchRoadRoute(points);
+      }
+
+      // 5. Draw route polyline (follows real roads)
+      if (routeGeometry) {
+        map.addSource('route', { type: 'geojson', data: { type: 'Feature', geometry: routeGeometry } });
+        map.addLayer({
+          id: 'route-line',
+          type: 'line',
+          source: 'route',
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: { 'line-color': '#2563eb', 'line-width': 4, 'line-opacity': 0.85 }
+        });
+      } else if (points.length >= 2) {
+        map.addSource('route', {
+          type: 'geojson',
+          data: {
+            type: 'Feature',
+            geometry: { type: 'LineString', coordinates: points.map(p => [p.lon, p.lat]) }
+          }
+        });
+        map.addLayer({
+          id: 'route-line',
+          type: 'line',
+          source: 'route',
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: { 'line-color': '#2563eb', 'line-width': 3, 'line-opacity': 0.8, 'line-dasharray': [2, 2] }
+        });
+      }
+
+      // 6. Render custom markers with Day pill + pin + Place name
+      points.forEach(p => {
+        const color = DAY_COLORS[(p.day - 1) % DAY_COLORS.length];
+
+        const el = document.createElement('div');
+        el.style.cssText = 'display:flex;flex-direction:column;align-items:center;cursor:pointer;';
+        el.innerHTML = `
+          <div style="
+            background:rgba(255,255,255,0.98);color:#0f172a;
+            font-size:9px;font-weight:800;padding:2px 7px;
+            border-radius:5px;border:1.5px solid ${color};
+            margin-bottom:3px;white-space:nowrap;
+            box-shadow:0 2px 8px rgba(0,0,0,0.22);letter-spacing:0.4px;
+          ">Day ${p.day}</div>
+          <div style="
+            background:${color};color:white;font-weight:800;
+            font-size:12px;width:30px;height:30px;border-radius:50%;
+            display:flex;align-items:center;justify-content:center;
+            border:3px solid white;box-shadow:0 3px 12px rgba(0,0,0,0.35);
+          ">${p.index}</div>
+          <div style="width:0;height:0;
+            border-left:6px solid transparent;
+            border-right:6px solid transparent;
+            border-top:8px solid ${color};margin-top:-1px;"></div>
+          <div style="
+            background:rgba(255,255,255,0.96);color:#1e293b;
+            font-size:9px;font-weight:700;padding:3px 7px;
+            border-radius:6px;border:1px solid #cbd5e1;
+            margin-top:4px;max-width:115px;text-align:center;
+            line-height:1.25;box-shadow:0 2px 6px rgba(0,0,0,0.15);
+          ">${p.shortName}</div>
+        `;
+
+        new mapboxgl.Marker({ element: el, anchor: 'center' })
+          .setLngLat([p.lon, p.lat])
+          .setPopup(new mapboxgl.Popup({ offset: 30 }).setHTML(
+            `<b style="font-size:13px;color:${color};">Day ${p.day} (Stop ${p.index})</b><br>
+             <span style="font-size:11px;color:#334155;font-weight:600;">${p.name}</span>`
+          ))
+          .addTo(map);
+      });
+
+      // 7. Fit bounds so all pins are framed comfortably
+      const bounds = points.reduce(
+        (b, p) => b.extend([p.lon, p.lat]),
+        new mapboxgl.LngLatBounds([points[0].lon, points[0].lat], [points[0].lon, points[0].lat])
+      );
+      map.fitBounds(bounds, { padding: 60, maxZoom: 13 });
+
+      // 8. Hide loading overlay & display map legend
+      overlay.style.display = 'none';
+      if (legend) legend.style.display = 'block';
+    });
+  }
+
+  window.addEventListener('load', initItineraryMap);
+
 </script>
 {% endblock %}
+

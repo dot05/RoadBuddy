@@ -462,7 +462,8 @@ async def trip_itinerary_page(trip_id: int, request: Request, db: Session = Depe
         "booked_cab": booked_cab,
         "vehicles": vehicles,
         "dist_one_way": dist_one_way,
-        "travel_time_str": travel_time_str
+        "travel_time_str": travel_time_str,
+        "mapbox_token": settings.mapbox_access_token,
     })
 
 
