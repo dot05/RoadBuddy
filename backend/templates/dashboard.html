@@ -770,7 +770,21 @@ async function generateQuickItinerary(event) {
     result.style.display = 'block';
   } catch (e) {
     console.error(e);
-    alert(e.message || 'Error generating itinerary. Please try again.');
+    const errorMsg = e.message || '🇮🇳 RoadBuddy Quick Itinerary is currently available only for destinations within India. Please enter a city or location inside India (e.g. Manali, Goa, Jaipur, Kerala, Leh).';
+    result.style.display = 'block';
+    daysContainer.innerHTML = `
+      <div style="background: rgba(239, 68, 68, 0.1); border: 1.5px solid rgba(239, 68, 68, 0.35); border-radius: var(--rb-radius-lg); padding: 28px 22px; text-align: center; color: #ffffff; backdrop-filter: blur(12px);">
+        <div style="font-size: 38px; margin-bottom: 12px;">🇮🇳</div>
+        <h3 style="margin: 0 0 10px 0; font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800; color: #fca5a5;">India Destinations Only</h3>
+        <p style="margin: 0; font-size: 14px; color: #e2e8f0; line-height: 1.6; max-width: 540px; margin-left: auto; margin-right: auto;">
+          ${errorMsg}
+        </p>
+      </div>
+    `;
+    const titleEl = document.getElementById('result-title');
+    if (titleEl) titleEl.innerText = "Location Outside India";
+    const metaEl = document.getElementById('result-meta');
+    if (metaEl) metaEl.innerText = "🇮🇳 Available for Indian Destinations";
   } finally {
     btn.disabled = false;
     loading.style.display = 'none';

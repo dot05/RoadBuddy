@@ -39,3 +39,9 @@ def test_quick_itinerary_flow(client, auth_headers):
     payload_invalid_days = {"destination": "Goa", "days": 20}
     res_err_days = client.post("/api/trips/quick-itinerary", json=payload_invalid_days, headers=auth_headers)
     assert res_err_days.status_code == 400
+
+    # 4. Foreign destination outside India (rejection with India-only detail)
+    payload_foreign = {"destination": "Paris", "days": 3}
+    res_foreign = client.post("/api/trips/quick-itinerary", json=payload_foreign, headers=auth_headers)
+    assert res_foreign.status_code == 400
+    assert "destinations within India" in res_foreign.json()["detail"]
