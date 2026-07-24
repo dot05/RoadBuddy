@@ -475,11 +475,17 @@
 
 <!-- Itinerary stops data for map -->
 <script>
-const MAPBOX_TOKEN       = {{ mapbox_token | tojson }};
-const ITINERARY_DESTINATION = {{ trip.destination | tojson }};
+const MAPBOX_TOKEN          = {{ mapbox_token | tojson }};
+const ITINERARY_ORIGIN      = {{ (trip.origin or '') | tojson }};
+const ITINERARY_DESTINATION = {{ (trip.destination or '') | tojson }};
 const ITINERARY_STOPS = [
-  {% for stop in trip.stops if stop.place_type == 'sightseeing' %}
-  { day: {{ stop.day }}, name: {{ stop.place_name | tojson }} },
+  {% for stop in trip.stops if stop.place_type in ['sightseeing', 'destination_food'] %}
+    {% set p_name = (stop.place_name or '') | lower %}
+    {% set orig_name = (trip.origin or '') | lower %}
+    {% set dest_name = (trip.destination or '') | lower %}
+    {% if not (orig_name and orig_name != dest_name and orig_name in p_name) %}
+  { day: {{ stop.day }}, name: {{ stop.place_name | tojson }}, type: {{ stop.place_type | tojson }} },
+    {% endif %}
   {% endfor %}
 ];
 </script>
@@ -5122,6 +5128,19 @@ const ITINERARY_STOPS = [
     return null;
   }
 
+  // Calculate distance in km between two lat/lon points (Haversine formula)
+  function getKmDistance(lat1, lon1, lat2, lon2) {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  }
+
   // Generate scenic loop offsets around the destination so AI stops fan out realistically
   function getScenicLoopOffset(index, total) {
     const angle = (index / (total || 1)) * 2 * Math.PI - (Math.PI / 4);
@@ -5179,18 +5198,40 @@ const ITINERARY_STOPS = [
 
     // 3. Wait for map style to load, then add pins & route
     map.on('load', async () => {
-      const total = ITINERARY_STOPS.length;
+      // Filter stops to show ONLY destination sightseeing & local destination places
+      const destinationStops = ITINERARY_STOPS.filter(stop => {
+        const name = (stop.name || "").toLowerCase();
+        const orig = (ITINERARY_ORIGIN || "").toLowerCase();
+        const dest = (ITINERARY_DESTINATION || "").toLowerCase();
+        
+        // Exclude origin city places if origin differs from destination
+        if (orig && orig !== dest && name.includes(orig)) return false;
+        return true;
+      });
+
+      const stopsToRender = destinationStops.length > 0 ? destinationStops : ITINERARY_STOPS;
+      const total = stopsToRender.length;
       const points = [];
 
       for (let i = 0; i < total; i++) {
-        const stop = ITINERARY_STOPS[i];
+        const stop = stopsToRender[i];
         const cleaned = stop.name.replace(/^\d{1,2}:\d{2}\s*(AM|PM)\s*-\s*/i, '').trim();
 
-        // Try exact POI lookup first
+        // Try exact POI lookup in destination city
         let coords = await geocodeMapbox(`${cleaned}, ${ITINERARY_DESTINATION}`, false);
         
-        // If not a specific POI, place it on the scenic loop surrounding the destination
-        if (!coords) {
+        // Ensure coordinates are strictly within 50km of destination city (e.g. Delhi)
+        if (coords) {
+          const distFromDest = getKmDistance(coords.lat, coords.lon, destCoords.lat, destCoords.lon);
+          if (distFromDest > 50) {
+            // Re-assign to scenic loop around destination city if geocoded outside destination city
+            const off = getScenicLoopOffset(i, total);
+            coords = {
+              lat: destCoords.lat + off.dlat,
+              lon: destCoords.lon + off.dlon
+            };
+          }
+        } else {
           const off = getScenicLoopOffset(i, total);
           coords = {
             lat: destCoords.lat + off.dlat,

@@ -122,12 +122,12 @@ Road Trip Plan Details:
 {road_trip_instructions}
 
 CRITICAL ACCURACY & ITINERARY RULES:
-1. Generate an itinerary spanning EXACTLY {total_days} DAYS (from Day 1 to Day {total_days}). Provide exactly 4 detailed stops per day ('morning', 'afternoon', 'evening', and 'night').
+1. Generate an itinerary spanning EXACTLY {total_days} DAYS (from Day 1 to Day {total_days}). Provide 5 to 6 detailed, action-packed stops per day covering 'morning' (early morning nature/temples & mid-morning sightseeing), 'afternoon' (authentic dining & afternoon heritage/adventure), 'evening' (sunset lookouts & cultural shows), and 'night' (night markets, dinner & night strolls) so the traveler can enjoy their whole day!
 2. Group nearby tourist places, activities, and dining spots logically for each day to minimize travel time within {trip.destination}.
 3. Ensure all tourist spots, dhabas, cafes, and activities are strictly real, authentic, famous places located in or near {trip.destination}, India.
-4. The sequence MUST represent a logical chronological progression: morning (6:00 AM – 11:00 AM), afternoon (12:00 PM – 4:00 PM), evening (5:00 PM – 8:00 PM), and night (9:00 PM – 11:00 PM).
-5. The "place_name" of each stop MUST start with a specific time range (e.g. "07:30 AM - HP Petrol Pump, NH-48", "01:30 PM - Midway Family Dhaba", "06:00 PM - City Palace", "09:30 PM - Old Town Market & Dinner").
-6. Each stop description MUST be a detailed paragraph (at least 3-4 sentences, minimum 40 words) providing extensive local context, what to see, what to eat, and travel tips.
+4. The sequence MUST represent a logical chronological progression: early morning (07:00 AM – 09:30 AM), morning (10:00 AM – 12:30 PM), afternoon (01:00 PM – 03:30 PM), late afternoon (04:00 PM – 06:00 PM), evening/sunset (06:30 PM – 08:30 PM), and night (09:00 PM – 10:30 PM).
+5. The "place_name" of each stop MUST start with a specific time range (e.g. "07:30 AM - Sunrise Viewpoint", "10:00 AM - Amber Fort & Sheesh Mahal", "01:30 PM - LMB Traditional Rajasthani Lunch", "04:00 PM - Albert Hall Museum & Gardens", "06:30 PM - Hawa Mahal Sunset & Market Walk", "09:00 PM - Chokhi Dhani Cultural Night & Dinner").
+6. Each stop description MUST be a detailed paragraph (at least 3-4 sentences, minimum 40 words) providing extensive local context, what to see, what to eat, photo spots, parking guidance, and travel advice.
 {summary_instruction}
 
 Return ONLY valid JSON matching this schema:
@@ -179,12 +179,12 @@ Group: {get_group_tips(trip.group_type, trip.num_people)} (Total {trip.num_peopl
 
 Generate a high-quality destination-only itinerary for EXACTLY {total_days} DAYS. NO highway/fuel/toll stops.
 CRITICAL ITINERARY RULES:
-1. Structure the plan across EXACTLY {total_days} DAYS (from Day 1 to Day {total_days}). Provide exactly 4 detailed stops per day covering 'morning', 'afternoon', 'evening', and 'night'.
+1. Structure the plan across EXACTLY {total_days} DAYS (from Day 1 to Day {total_days}). Provide 5 to 6 detailed, action-packed stops per day covering 'morning' (early morning nature/temples & mid-morning sightseeing), 'afternoon' (authentic dining & afternoon heritage/adventure), 'evening' (sunset lookouts & cultural shows), and 'night' (night markets, dinner & night strolls) so the traveler can enjoy their whole day!
 2. Group nearby tourist attractions, activities, and dining spots logically for each day to minimize travel time within {trip.destination}.
 3. All tourist spots, cafes, and activities MUST be real, authentic, famous places located in or near {trip.destination}, India.
-4. The sequence MUST represent a logical chronological progression: morning (6:00 AM – 11:00 AM), afternoon (12:00 PM – 4:00 PM), evening (5:00 PM – 8:00 PM), and night (9:00 PM – 11:00 PM).
-5. The "place_name" of each stop MUST start with a specific time range (e.g. "09:00 AM - Hadimba Devi Temple", "01:30 PM - Mall Road Cafe", "05:30 PM - Solang Valley Sunset", "08:30 PM - Johnson's Cafe Dinner").
-6. Each stop description MUST be a detailed paragraph (3-4 sentences, minimum 40 words) providing extensive local context, what to see, what to eat, and travel guidance.
+4. The sequence MUST represent a logical chronological progression: early morning (07:00 AM – 09:30 AM), morning (10:00 AM – 12:30 PM), afternoon (01:00 PM – 03:30 PM), late afternoon (04:00 PM – 06:00 PM), evening/sunset (06:30 PM – 08:30 PM), and night (09:00 PM – 10:30 PM).
+5. The "place_name" of each stop MUST start with a specific time range (e.g. "07:30 AM - Hadimba Devi Temple", "10:00 AM - Solang Valley Ropeway", "01:30 PM - Mall Road Cafe", "04:00 PM - Vashisht Hot Springs", "06:30 PM - Sunset Viewpoint", "08:30 PM - Johnson's Cafe Dinner").
+6. Each stop description MUST be a detailed paragraph (3-4 sentences, minimum 40 words) providing extensive local context, what to see, what to eat, photo spots, and travel guidance.
 7. All estimated costs ("estimated_cost_inr") MUST be calculated and scaled for all {trip.num_people} travelers.
 8. The "ai_summary" field MUST be customized for {trip.num_people} travelers going to {trip.destination}.
 
@@ -219,28 +219,52 @@ from app.services.groq_client import call_groq
 
 DESTINATION_ATTRACTIONS = {
     "manali": [
-        ("09:00 AM - Hadimba Devi Temple & Cedar Forest", "sightseeing", "Explore the iconic 16th-century wooden temple surrounded by giant Deodar cedar forests. Breathe fresh mountain pine air and take yak rides."),
+        ("07:30 AM - Jogini Waterfall Nature Walk & Sunrise Point", "sightseeing", "Start the morning with a refreshing trek through pine woods to Jogini Waterfalls with breathtaking valley sunrise views."),
+        ("10:00 AM - Hadimba Devi Temple & Ancient Cedar Forest", "sightseeing", "Explore the iconic 16th-century wooden temple surrounded by giant Deodar cedar forests. Breathe fresh mountain pine air and take yak rides."),
         ("01:30 PM - Old Manali Cafe & Riverbed Lunch", "destination_food", "Enjoy wood-fired trout pizza, fresh apple cider, and mountain view coffee at a peaceful streamside cafe in Old Manali."),
-        ("05:30 PM - Solang Valley Sunset & Adventure Lookout", "sightseeing", "Enjoy paragliding, ropeway rides, and breathtaking sunset views over snow-capped Himalayan peaks."),
+        ("03:30 PM - Vashisht Hot Water Springs & Himalayan Spa", "sightseeing", "Take a soothing dip in the natural hot sulphur springs at Vashisht village, renowned for therapeutic medicinal properties."),
+        ("06:00 PM - Solang Valley Sunset & Adventure Ropeway", "sightseeing", "Enjoy paragliding, ropeway rides, and breathtaking sunset views over snow-capped Himalayan peaks."),
         ("08:30 PM - Mall Road Stroll & Kullu Trout Dinner", "destination_food", "Walk down the bustling Mall Road market, shop for Himachali shawls, and savor traditional Kullu trout fish dinner.")
     ],
     "udaipur": [
-        ("09:00 AM - City Palace & Maharana Museum", "sightseeing", "Explore Rajasthan's largest royal palace complex overlooking Lake Pichola. Marvel at peacock mosaics, mirror halls, and royal armory."),
-        ("01:30 PM - Ambrai Ghat & Lakeview Rajasthani Lunch", "destination_food", "Dine right by the waters of Lake Pichola with magnificent views of Jagmandir and City Palace. Taste authentic Laal Maas and Gatte ki Sabzi."),
-        ("05:30 PM - Lake Pichola Sunset Boat Cruise", "sightseeing", "Take a picturesque evening boat ride around Jagmandir island while watching the golden sunset paint the white marble palaces."),
-        ("08:30 PM - Bagore ki Haveli Cultural Dance & Dinner", "destination_food", "Watch traditional Dharohar folk dance and puppet shows at Gangaur Ghat, followed by a romantic rooftop dinner.")
+        ("07:30 AM - Saheliyon ki Bari Royal Gardens & Fountains", "sightseeing", "Enjoy an early morning stroll in the marble gardens built for royal princesses, featuring lotus pools and marble fountains."),
+        ("10:00 AM - City Palace & Maharana Museum", "sightseeing", "Explore Rajasthan's largest royal palace complex overlooking Lake Pichola. Marvel at peacock mosaics, mirror halls, and royal armory."),
+        ("01:30 PM - Ambrai Ghat & Lakeview Rajasthani Thali Lunch", "destination_food", "Dine right by the waters of Lake Pichola with magnificent views of Jagmandir and City Palace. Taste authentic Laal Maas and Gatte ki Sabzi."),
+        ("03:30 PM - Jagdish Temple & Heritage Old City Walk", "sightseeing", "Visit the Indo-Aryan Jagdish Temple adorned with carved stone pillars, followed by a walk through silver markets and spice shops."),
+        ("06:00 PM - Lake Pichola Sunset Boat Cruise to Jagmandir", "sightseeing", "Take a picturesque evening boat ride around Jagmandir island while watching the golden sunset paint the white marble palaces."),
+        ("08:30 PM - Bagore ki Haveli Cultural Dance & Rooftop Dinner", "destination_food", "Watch traditional Dharohar folk dance and puppet shows at Gangaur Ghat, followed by a romantic rooftop dinner.")
     ],
     "jaipur": [
-        ("09:00 AM - Amber Fort & Sheesh Mahal", "sightseeing", "Ascend the majestic hilltop Amber Fort. Tour the mirror-adorned Sheesh Mahal, royal courtyards, and panoramic Maota Lake vistas."),
-        ("01:30 PM - Laxmi Mishthan Bhandar (LMB) — Traditional Thali", "destination_food", "Feast on famous authentic Rajasthani Dal Baati Churma, Ker Sangri, and Ghewar at LMB in Johari Bazaar."),
-        ("05:30 PM - Hawa Mahal & Pink City Bazaar Walk", "sightseeing", "Photograph the iconic honeycomb pink sandstone facade of Hawa Mahal, and shop for handcrafted mojris and blue pottery."),
-        ("08:30 PM - Nahargarh Fort Sunset View & Dinner", "destination_food", "Drive up the winding hills to Nahargarh Fort for a breathtaking night panorama of illuminated Jaipur city while dining.")
+        ("07:30 AM - Patrika Gate & Jawahar Circle Garden Walk", "sightseeing", "Photograph the vibrant hand-painted arches of Patrika Gate, capturing Jaipur's rich heritage in the soft morning light."),
+        ("10:00 AM - Amber Fort, Sheesh Mahal & Maota Lake", "sightseeing", "Ascend the majestic hilltop Amber Fort. Tour the mirror-adorned Sheesh Mahal, royal courtyards, and panoramic Maota Lake vistas."),
+        ("01:30 PM - Laxmi Mishthan Bhandar (LMB) — Dal Baati Churma Lunch", "destination_food", "Feast on famous authentic Rajasthani Dal Baati Churma, Ker Sangri, and Ghewar at LMB in Johari Bazaar."),
+        ("03:30 PM - Jantar Mantar Observatory & City Palace", "sightseeing", "Discover the world's largest stone sundial at UNESCO Jantar Mantar and explore the royal textile museum inside City Palace."),
+        ("06:00 PM - Hawa Mahal Pink City Bazaar & Handicrafts Walk", "sightseeing", "Photograph the iconic honeycomb pink sandstone facade of Hawa Mahal, and shop for handcrafted mojris and blue pottery."),
+        ("08:30 PM - Nahargarh Fort Sunset View & Rooftop Dinner", "destination_food", "Drive up the winding hills to Nahargarh Fort for a breathtaking night panorama of illuminated Jaipur city while dining.")
     ],
     "goa": [
-        ("09:00 AM - Fort Aguada & Sinquerim Beach Lookout", "sightseeing", "Visit the 17th-century Portuguese fortress and lighthouse standing over the Arabian Sea with panoramic coastal views."),
-        ("01:30 PM - Fisherman's Wharf — Goan Seafood Lunch", "destination_food", "Savor fresh Goan fish curry rice, prawn balchão, and kokum feni at a scenic riverside shack."),
-        ("05:30 PM - Baga Beach Sunset & Water Sports", "sightseeing", "Watch golden sunset waves, enjoy parasailing or jet skiing, and soak in the vibrant beach shack atmosphere."),
-        ("08:30 PM - Panjim Fontainhas Latin Quarter Night Walk & Dinner", "destination_food", "Stroll through colorful Portuguese heritage streets in Panjim and dine at a boutique Goan-Mediterranean bistro.")
+        ("07:30 AM - Aguada Fort Lighthouse & Coastal Morning Breeze", "sightseeing", "Visit the 17th-century Portuguese fortress and lighthouse standing over the Arabian Sea with panoramic coastal views."),
+        ("10:00 AM - Basilica of Bom Jesus & Old Goa Heritage Churches", "sightseeing", "Tour the UNESCO World Heritage Basilica housing the sacred relics of St. Francis Xavier, featuring baroque Portuguese architecture."),
+        ("01:30 PM - Fisherman's Wharf — Traditional Goan Seafood Lunch", "destination_food", "Savor fresh Goan fish curry rice, prawn balchão, and kokum feni at a scenic riverside shack."),
+        ("03:30 PM - Calangute Beach & Water Sports Arena", "sightseeing", "Enjoy thrilling parasailing, banana rides, and jet skiing along North Goa's most vibrant coastline."),
+        ("06:00 PM - Baga Beach Sunset & Shack Music", "sightseeing", "Watch golden sunset waves, listen to live acoustic music, and soak in the vibrant beach shack atmosphere."),
+        ("08:30 PM - Panjim Fontainhas Latin Quarter Night Walk & Bistro Dinner", "destination_food", "Stroll through colorful Portuguese heritage streets in Panjim and dine at a boutique Goan-Mediterranean bistro.")
+    ],
+    "shimla": [
+        ("07:30 AM - Jakhoo Hill Temple & Giant Hanuman Statue Walk", "sightseeing", "Trek to Shimla's highest peak for 360-degree mountain views and visit the ancient Jakhoo Hanuman Temple."),
+        ("10:00 AM - Viceregal Lodge & Botanical Heritage Gardens", "sightseeing", "Tour the Victorian-style heritage palace where historic Indian partition talks took place, set amidst pine gardens."),
+        ("01:30 PM - Cafe Simla Times — Mountain View Lunch", "destination_food", "Savor artisan pizzas, burgers, and hot cocoa on an outdoor terrace overlooking the green Shimla valley."),
+        ("03:30 PM - Kufri Adventure World & Himalayan Nature Park", "sightseeing", "Head to Kufri for horse rides, snow points, and viewing Himalayan ibex and pheasants at the nature park."),
+        ("06:00 PM - The Ridge & Christ Church Sunset Walk", "sightseeing", "Stroll across the iconic open square of The Ridge, photograph neo-gothic Christ Church, and watch valley sunsets."),
+        ("08:30 PM - Mall Road Night Market & Bakery Treat", "destination_food", "Browse woolen markets and bookshops along Mall Road, stopping at historic bakeries for warm pastries and coffee.")
+    ],
+    "agra": [
+        ("06:00 AM - Taj Mahal Sunrise Tour & Royal Gardens", "sightseeing", "Witness the ivory-white marble Taj Mahal glowing in soft golden sunrise light, exploring quiet marble reflection pools."),
+        ("10:00 AM - Agra Fort & Diwan-i-Khas Palace", "sightseeing", "Tour the formidable red sandstone citadel of Mughal emperors, including Khas Mahal and Jahangir Palace."),
+        ("01:30 PM - Pinch of Spice — Authentic Mughlai Lunch", "destination_food", "Enjoy creamy butter chicken, mutton rogan josh, and hot garlic naan at Agra's premier Mughlai restaurant."),
+        ("03:30 PM - Tomb of I'timād-ud-Daulah (Baby Taj)", "sightseeing", "Visit the exquisite marble mausoleum often called the jewel box of Mughal architecture along the Yamuna River."),
+        ("06:00 PM - Mehtab Bagh Sunset View of Taj Mahal Across Yamuna", "sightseeing", "Relax in the riverside gardens of Mehtab Bagh for a peaceful sunset view of the Taj Mahal silhouette across the river."),
+        ("08:30 PM - Sadar Bazaar Shopping & Petha Sweets Tasting", "destination_food", "Explore Sadar Bazaar for leather handicrafts and sample famous Agra Angoori and Paan Petha sweets.")
     ]
 }
 
