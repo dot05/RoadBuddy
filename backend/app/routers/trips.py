@@ -785,6 +785,74 @@ def end_trip(
 
 # ---------------- QUICK ITINERARY GENERATOR ----------------
 
+FOREIGN_DESTINATION_KEYWORDS = {
+    "paris", "london", "new york", "tokyo", "dubai", "singapore", "bali", "thailand",
+    "bangkok", "switzerland", "italy", "france", "usa", "america", "uk", "united kingdom",
+    "japan", "china", "germany", "spain", "australia", "canada", "los angeles", "chicago",
+    "san francisco", "miami", "las vegas", "toronto", "vancouver", "sydney", "melbourne",
+    "rome", "barcelona", "madrid", "amsterdam", "berlin", "munich", "vienna", "prague",
+    "budapest", "istanbul", "cairo", "cape town", "rio de janeiro", "buenos aires",
+    "mexico city", "seoul", "beijing", "shanghai", "hong kong", "taiwan", "kuala lumpur",
+    "vietnam", "hanoi", "phuket", "maldives", "sri lanka", "colombo", "kathmandu", "nepal",
+    "bhutan", "pakistan", "bangladesh", "dhaka", "afghanistan", "iran", "iraq", "saudi arabia",
+    "qatar", "doha", "abu dhabi", "sharjah", "kuwait", "bahrain", "oman", "muscat", "russia",
+    "moscow", "ukraine", "poland", "greece", "athens", "turkey", "egypt", "south africa",
+    "brazil", "argentina", "new zealand", "auckland", "hawaii", "alaska", "sweden", "norway",
+    "denmark", "finland", "portugal", "lisbon", "zurich", "geneva", "austria"
+}
+
+INDIAN_DESTINATION_KEYWORDS = {
+    "manali", "goa", "jaipur", "kerala", "leh", "ladakh", "delhi", "mumbai", "bengaluru",
+    "bangalore", "kolkata", "chennai", "hyderabad", "pune", "ahmedabad", "surat", "udaipur",
+    "jodhpur", "shimla", "dharamshala", "risikesh", "rishikesh", "haridwar", "varanasi",
+    "agra", "mussoorie", "nainital", "darjeeling", "gangtok", "shillong", "munnar",
+    "wayanad", "alleppey", "kochi", "coorg", "ooty", "kodaikanal", "pondicherry",
+    "puducherry", "andaman", "nicobar", "lakshadweep", "srinagar", "gulmarg", "pahalgam",
+    "jammu", "kashmir", "amritsar", "vrindavan", "mathura", "ayodhya", "ujjain", "indore",
+    "bhopal", "gwalior", "nashik", "shirdi", "lonavala", "khandala", "mahableshwar",
+    "hampi", "gokarna", "mysore", "mysuru", "chikmagalur", "coimbatore", "madurai", "rameshwaram",
+    "kanyakumari", "tirupati", "vizag", "visakhapatnam", "bhubaneswar", "puri", "cuttack",
+    "guwahati", "kaziranga", "tawang", "imphal", "kohima", "aizawl", "agartala", "ranchi",
+    "jamshedpur", "patna", "raipur", "dehradun", "rohtak", "chandigarh", "mohali", "panchkula",
+    "noida", "gurugram", "gurgaon", "faridabad", "ghaziabad", "india"
+}
+
+async def is_destination_in_india(destination: str) -> bool:
+    import re, httpx
+    dest_cleaned = destination.strip().lower()
+
+    # Fast match against known foreign keywords
+    words = re.split(r'[\s,]+', dest_cleaned)
+    for word in words:
+        if word in FOREIGN_DESTINATION_KEYWORDS:
+            return False
+
+    # Fast match against known Indian cities / destinations
+    for word in words:
+        if word in INDIAN_DESTINATION_KEYWORDS:
+            return True
+
+    # Geocoding fallback check via OpenStreetMap / Nominatim
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            url = f"https://nominatim.openstreetmap.org/search?q={httpx.URL(dest_cleaned)}&format=json&addressdetails=1&limit=1"
+            headers = {"User-Agent": "RoadBuddy-TravelApp/1.0"}
+            res = await client.get(url, headers=headers)
+            if res.status_code == 200:
+                data = res.json()
+                if data and len(data) > 0:
+                    addr = data[0].get("address", {})
+                    country_code = addr.get("country_code", "").lower()
+                    country = addr.get("country", "").lower()
+                    if country_code == "in" or "india" in country:
+                        return True
+                    else:
+                        return False
+    except Exception as e:
+        print(f"Geocoding validation error for '{destination}': {e}")
+
+    return True
+
 class QuickItineraryRequest(BaseModel):
     destination: str
     days: int
@@ -803,21 +871,29 @@ async def generate_quick_itinerary(
     if days < 1 or days > 14:
         raise HTTPException(status_code=400, detail="Days must be between 1 and 14")
 
-    prompt = f"""You are RoadBuddy AI, an expert travel planner. Generate the ultimate high-quality, impressive day-by-day travel itinerary for a trip to {destination} for exactly {days} days.
+    # Enforce India-Only destinations
+    if not await is_destination_in_india(destination):
+        raise HTTPException(
+            status_code=400,
+            detail="🇮🇳 RoadBuddy Quick Itinerary is currently available only for destinations within India. Please enter a city or location inside India (e.g. Manali, Goa, Jaipur, Kerala, Leh)."
+        )
+
+    prompt = f"""You are RoadBuddy AI, an expert travel planner for India. Generate the ultimate high-quality, impressive day-by-day travel itinerary for a trip to {destination} in India for exactly {days} days.
 
 CRITICAL INSTRUCTIONS:
-1. Group nearby tourist places, activities, and dining spots logically for each day to minimize travel time.
-2. For each day, provide:
+1. Ensure all tourist spots, dhabas, cafes, and activities are strictly located in or near {destination}, India.
+2. Group nearby tourist places, activities, and dining spots logically for each day to minimize travel time.
+3. For each day, provide:
    - A list of best tourist attractions/activities to visit.
    - Recommended places to eat.
    - A descriptive, engaging summary paragraph of the day's theme/plan.
-3. DO NOT include specific timestamps or time slots (no "Morning", "Afternoon", "09:00 AM", etc.). Just structure it as:
+4. DO NOT include specific timestamps or time slots (no "Morning", "Afternoon", "09:00 AM", etc.). Just structure it as:
    - Day X:
      - Attractions: [List of places/activities]
      - Dining: [Recommended food/eateries]
      - Summary: [A rich, 3-4 sentence paragraph describing the flow of the day]
-4. Make sure the destinations, spots, and dhabas/restaurants are real and located in or near {destination}.
-5. Return ONLY a valid JSON object matching this structure:
+5. Make sure the destinations, spots, and dhabas/restaurants are real and located in or near {destination}.
+6. Return ONLY a valid JSON object matching this structure:
 {{
   "destination": "{destination}",
   "days_count": {days},

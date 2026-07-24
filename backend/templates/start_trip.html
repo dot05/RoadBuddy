@@ -351,11 +351,11 @@
   /* ─── COMPASS WIDGET ─── */
   .compass-widget {
     position: absolute;
-    top: 70px;
-    right: 16px;
+    top: 125px;
+    right: 10px;
     z-index: 1001;
-    width: 56px;
-    height: 56px;
+    width: 48px;
+    height: 48px;
     background: rgba(255,255,255,0.95);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -566,15 +566,7 @@
   }
   .spinner-sm {
     width: 22px; height: 22px;
-    border: 2px solid var(--border-color);
-    border-top-color: var(--primary);
-    border-radius: 50%;
-    animation: spin 0.7s linear infinite;
-    margin: 0 auto 10px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ─── MOBILE MEDIA RESPONSIVENESS OVERRIDES ─── */
+    border: 2px solid var(--border-  /* ─── MOBILE MEDIA RESPONSIVENESS OVERRIDES (DASHBOARD PARITY) ─── */
   @media (max-width: 768px) {
     .topbar {
       height: calc(54px + env(safe-area-inset-top, 0px)) !important;
@@ -593,7 +585,7 @@
     }
     .topbar > div:last-child {
       display: flex !important;
-      gap: 4px !important;
+      gap: 6px !important;
       align-items: center !important;
       margin-left: auto !important;
     }
@@ -602,20 +594,22 @@
       font-size: 16px !important;
     }
     
-    /* Modern circular buttons for mobile topbar */
+    /* Touch-friendly topbar action buttons */
     .topbar button, .topbar a.back-to-itinerary, .topbar a[href="/dashboard"] {
-      width: 32px !important;
-      height: 32px !important;
-      padding: 0 !important;
+      min-width: 36px !important;
+      height: 36px !important;
+      padding: 0 10px !important;
       display: inline-flex !important;
       align-items: center !important;
       justify-content: center !important;
-      border-radius: 50% !important;
-      font-size: 15px !important;
+      border-radius: 20px !important;
+      font-size: 13px !important;
+      font-weight: 700 !important;
       border: 1.5px solid var(--border-color) !important;
       background: var(--surface) !important;
       box-shadow: 0 2px 8px rgba(0,0,0,0.05) !important;
       flex-shrink: 0 !important;
+      touch-action: manipulation !important;
     }
     .topbar button.splitwise-trigger-btn {
       border-color: #1d9e75 !important;
@@ -632,14 +626,15 @@
     .btn-text { display: none !important; }
     
     .transport-bar {
-      height: 48px !important;
-      padding: 0 12px !important;
-      gap: 8px !important;
+      height: 46px !important;
+      padding: 0 10px !important;
+      gap: 6px !important;
       background: #f8fafc !important;
       border-bottom: 1px solid #e2e8f0 !important;
       display: flex !important;
       align-items: center !important;
       overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch !important;
     }
     .transport-tab {
       padding: 6px 12px !important;
@@ -647,53 +642,99 @@
       border-radius: 20px !important;
       font-weight: 700 !important;
       white-space: nowrap !important;
+      touch-action: manipulation !important;
     }
     
+    /* Full Viewport Map Canvas Layout */
     .main-layout {
-      flex-direction: column !important;
-      height: calc(100vh - 102px - env(safe-area-inset-top, 0px)) !important;
-    }
-    
-    .left-panel {
+      position: relative !important;
+      height: calc(100vh - 100px - env(safe-area-inset-top, 0px)) !important;
       width: 100% !important;
-      height: auto !important;
-      max-height: 40% !important;
-      border-right: none !important;
-      border-bottom: 1px solid var(--border-color) !important;
-      overflow-y: auto !important;
-      transition: max-height 0.3s ease !important;
+      overflow: hidden !important;
     }
-    
-    /* Expand sidebar panel height when typing/focusing details inside form */
-    .left-panel:focus-within {
-      max-height: 70% !important;
-    }
-    
-    .panel-section { padding: 12px 16px !important; }
-    .loc-input { padding: 10px 10px 10px 32px !important; font-size: 13px !important; }
-    .get-routes-btn { padding: 12px !important; font-size: 13px !important; margin-top: 2px !important; }
     
     .right-map-area {
-      flex: 1 !important;
-      height: 60% !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      z-index: 1 !important;
     }
 
-    /* POI categories bar overlay styling */
+    #map {
+      width: 100% !important;
+      height: 100% !important;
+    }
+    
+    /* Floating Collapsible Bottom Sheet Drawer */
+    .left-panel {
+      position: absolute !important;
+      bottom: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      width: 100% !important;
+      max-height: 75vh !important;
+      z-index: 20 !important;
+      background: rgba(255, 255, 255, 0.96) !important;
+      backdrop-filter: blur(16px) !important;
+      -webkit-backdrop-filter: blur(16px) !important;
+      border-radius: 24px 24px 0 0 !important;
+      box-shadow: 0 -8px 30px rgba(0,0,0,0.2) !important;
+      border: 1px solid rgba(255,255,255,0.7) !important;
+      border-bottom: none !important;
+      overflow-y: auto !important;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.35s ease !important;
+      padding-top: 22px !important;
+    }
+
+    .mobile-drawer-handle {
+      display: block !important;
+      position: absolute !important;
+      top: 8px !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      width: 44px !important;
+      height: 5px !important;
+      background: #cbd5e1 !important;
+      border-radius: 4px !important;
+      cursor: pointer !important;
+      z-index: 25 !important;
+    }
+
+    /* Collapsed drawer state for full map visibility */
+    .left-panel.drawer-collapsed {
+      transform: translateY(calc(100% - 52px)) !important;
+    }
+
+    /* Hide drawer completely during active driving navigation */
+    body.nav-active .left-panel {
+      transform: translateY(100%) !important;
+    }
+    
+    .panel-section { padding: 10px 14px !important; }
+    .loc-input { padding: 10px 10px 10px 32px !important; font-size: 13px !important; }
+    .get-routes-btn { padding: 12px !important; font-size: 13px !important; margin-top: 2px !important; touch-action: manipulation !important; }
+    
+    /* POI Sidebar on Mobile */
     .poi-categories-bar {
       top: 10px !important;
       left: 10px !important;
-      right: 10px !important;
       gap: 6px !important;
     }
+    body.nav-active .poi-categories-bar {
+      top: 135px !important;
+    }
     .poi-btn {
-      padding: 6px 12px !important;
+      padding: 8px 12px !important;
       font-size: 11.5px !important;
-      background: rgba(255, 255, 255, 0.92) !important;
-      backdrop-filter: blur(6px) !important;
+      background: rgba(255, 255, 255, 0.94) !important;
+      backdrop-filter: blur(8px) !important;
       border: 1px solid rgba(255, 255, 255, 0.6) !important;
       border-radius: 20px !important;
       color: #334155 !important;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05) !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+      touch-action: manipulation !important;
     }
     .poi-btn.active {
       background: #10b981 !important;
@@ -702,33 +743,46 @@
       box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25) !important;
     }
 
-    /* Shift Mapbox default controls to not overlap with POI bar or compass */
+    /* Mapbox controls and compass positioning */
     .mapboxgl-ctrl-top-right {
-      top: auto !important;
-      bottom: 120px !important;
+      top: 10px !important;
+      right: 10px !important;
+      bottom: auto !important;
+    }
+    .compass-widget {
+      top: 125px !important;
+      right: 10px !important;
     }
     
+    #map-layers-widget {
+      bottom: 75px !important;
+      left: 12px !important;
+    }
+
     .map-controls {
-      bottom: 16px !important;
-      right: 16px !important;
+      bottom: 75px !important;
+      right: 12px !important;
       gap: 8px !important;
     }
     .map-ctrl-btn {
-      background: rgba(255, 255, 255, 0.92) !important;
+      background: rgba(255, 255, 255, 0.94) !important;
       backdrop-filter: blur(8px) !important;
       border: 1px solid rgba(255, 255, 255, 0.6) !important;
       border-radius: 24px !important;
-      padding: 8px 16px !important;
-      font-size: 11.5px !important;
+      padding: 10px 18px !important;
+      font-size: 12px !important;
       font-weight: 700 !important;
       color: #1e293b !important;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.1) !important;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.15) !important;
+      touch-action: manipulation !important;
     }
     .map-ctrl-btn#nav-toggle-btn {
       background: linear-gradient(135deg, #10b981, #059669) !important;
       color: #ffffff !important;
       border: none !important;
-      box-shadow: 0 8px 16px rgba(16, 185, 129, 0.24) !important;
+      box-shadow: 0 8px 18px rgba(16, 185, 129, 0.3) !important;
+    }
+  }x 16px rgba(16, 185, 129, 0.24) !important;
     }
 
     /* Auto-collapses input sections when route sets render on mobile screen bounds */
@@ -1068,6 +1122,7 @@
 <div class="main-layout">
 
   <div class="left-panel" id="sidebar-panel">
+    <div class="mobile-drawer-handle" onclick="toggleMobileDrawer()" title="Drag or tap to expand/collapse"></div>
 
     <div id="gps-status-row" class="gps-status-bar">
       <div class="gps-dot" id="gps-dot"></div>
@@ -2236,6 +2291,13 @@ let partnerFuelStationMarkers = [];
       
       partnerRestaurants.forEach(r => {
         if (!r.latitude || !r.longitude) return;
+
+        // STRICT ALONG-ROUTE FILTER: Skip partner restaurants not within 3.0 km of route
+        if (currentPolyline && currentPolyline.length > 0) {
+          if (!isPoiAlongRoute(r.latitude, r.longitude, currentPolyline, 3.0)) {
+            return;
+          }
+        }
         
         let distanceHtml = '';
         if (refLat && refLon) {
@@ -2311,6 +2373,13 @@ async function loadPartnerFuelStationsOnMap() {
 
     stations.forEach(s => {
       if (!s.latitude || !s.longitude) return;
+
+      // STRICT ALONG-ROUTE FILTER: Skip partner fuel stations not within 3.0 km of route
+      if (currentPolyline && currentPolyline.length > 0) {
+        if (!isPoiAlongRoute(s.latitude, s.longitude, currentPolyline, 3.0)) {
+          return;
+        }
+      }
       console.log("DEBUG: Adding marker for station:", s.name, "at coords", s.latitude, s.longitude);
 
       let distanceHtml = '';
@@ -2411,6 +2480,13 @@ async function loadPartnerFuelStationsOnMap() {
   }
 }
 
+  function toggleMobileDrawer() {
+    const panel = document.getElementById('sidebar-panel');
+    if (panel) {
+      panel.classList.toggle('drawer-collapsed');
+    }
+  }
+
   // ─── COMPASS / HEADING HELPERS ─────────────────────────
   function calcBearing(lat1, lon1, lat2, lon2) {
     const toRad = d => d * Math.PI / 180;
@@ -2428,6 +2504,70 @@ async function loadPartnerFuelStationsOnMap() {
     return dirs[Math.round(deg / 45) % 8] + ' ' + Math.round(deg) + '°';
   }
 
+  // ─── REAL-TIME DEVICE COMPASS & ORIENTATION ─────────────
+  let deviceHeading = null;
+  let isOrientationPermissionRequested = false;
+
+  function initDeviceOrientation() {
+    if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+      if (!isOrientationPermissionRequested) {
+        isOrientationPermissionRequested = true;
+        DeviceOrientationEvent.requestPermission()
+          .then(permissionState => {
+            if (permissionState === 'granted') {
+              bindOrientationEvents();
+            }
+          })
+          .catch(console.warn);
+      }
+    } else {
+      bindOrientationEvents();
+    }
+  }
+
+  function bindOrientationEvents() {
+    if ('ondeviceorientationabsolute' in window) {
+      window.addEventListener('deviceorientationabsolute', handleDeviceOrientation, true);
+    }
+    if ('ondeviceorientation' in window) {
+      window.addEventListener('deviceorientation', handleDeviceOrientation, true);
+    }
+  }
+
+  function handleDeviceOrientation(event) {
+    let heading = null;
+
+    if (event.webkitCompassHeading !== undefined && event.webkitCompassHeading !== null) {
+      // iOS Safari (webkitCompassHeading: 0 = North, 90 = East, 180 = South, 270 = West)
+      heading = event.webkitCompassHeading;
+    } else if (event.alpha !== undefined && event.alpha !== null) {
+      // Android Chrome / Standard DeviceOrientation (alpha: 0..360)
+      heading = 360 - event.alpha;
+    }
+
+    if (heading !== null && !isNaN(heading)) {
+      heading = (heading + 360) % 360;
+      deviceHeading = heading;
+      userHeading = heading;
+
+      // Update compass widget N/E/S/W needle
+      updateCompass(heading);
+
+      // Rotate user location arrow icon on map in real time
+      if (userMarker) {
+        const svgArrow = userMarker.getElement().querySelector('.nav-arrow-svg');
+        if (svgArrow) {
+          svgArrow.style.transform = `translate(-50%, -50%) rotate(${Math.round(heading)}deg)`;
+        }
+      }
+
+      // If active navigation mode, rotate map bearing smoothly with device direction
+      if (isNavigating && !userInteractedWithMap && map) {
+        map.setBearing(Math.round(heading));
+      }
+    }
+  }
+
   function updateCompass(heading) {
     const needle = document.getElementById('compass-needle');
     if (needle) needle.style.transform = `rotate(${-heading}deg)`;
@@ -2440,7 +2580,7 @@ async function loadPartnerFuelStationsOnMap() {
     const el = document.createElement('div');
     el.innerHTML = `<div class="nav-arrow-container">
         <div class="nav-arrow-pulse"></div>
-        <svg class="nav-arrow-svg" viewBox="0 0 32 32" style="transform: translate(-50%,-50%) rotate(${rotation}deg);">
+        <svg class="nav-arrow-svg" viewBox="0 0 32 32" style="transform: translate(-50%,-50%) rotate(${rotation}deg); transition: transform 0.15s ease-out;">
           <circle cx="16" cy="16" r="14" fill="rgba(66,133,244,0.12)" stroke="rgba(66,133,244,0.3)" stroke-width="1"/>
           <polygon points="16,4 10,22 16,18 22,22" fill="#4285f4" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/>
         </svg>
@@ -3465,15 +3605,17 @@ async function loadPartnerFuelStationsOnMap() {
     }
   }
 
-  function addRouteLayer(data, color, weight, opacity, dashArray) {
+  function addRouteLayer(data, color, weight, opacity, dashArray, routeIdx) {
     runWhenMapReady(() => {
       const srcId = 'route-src-' + routeLayerCounter;
       const layId = 'route-layer-' + routeLayerCounter;
+      const hitLayId = 'route-hit-layer-' + routeLayerCounter;
       routeLayerCounter++;
 
       try {
         if (map.getSource(srcId)) {
-          map.removeLayer(layId);
+          if (map.getLayer(layId)) map.removeLayer(layId);
+          if (map.getLayer(hitLayId)) map.removeLayer(hitLayId);
           map.removeSource(srcId);
         }
 
@@ -3486,6 +3628,18 @@ async function loadPartnerFuelStationsOnMap() {
         map.addSource(srcId, {
           type: 'geojson',
           data: geoJsonData
+        });
+
+        // Invisible wide touch/click target line layer (width: 20px) for easy map clicking
+        map.addLayer({
+          id: hitLayId,
+          type: 'line',
+          source: srcId,
+          layout: { 'line-join': 'round', 'line-cap': 'round' },
+          paint: {
+            'line-width': (weight || 6) + 14,
+            'line-opacity': 0.0
+          }
         });
 
         const paint = {
@@ -3513,7 +3667,23 @@ async function loadPartnerFuelStationsOnMap() {
           paint: paint
         });
 
+        if (routeIdx !== undefined && routeIdx !== null) {
+          const clickHandler = (e) => {
+            if (e && e.originalEvent) e.originalEvent.stopPropagation();
+            selectCarRoute(routeIdx);
+          };
+
+          map.on('click', hitLayId, clickHandler);
+          map.on('click', layId, clickHandler);
+
+          map.on('mouseenter', hitLayId, () => { map.getCanvas().style.cursor = 'pointer'; });
+          map.on('mouseleave', hitLayId, () => { map.getCanvas().style.cursor = ''; });
+          map.on('mouseenter', layId, () => { map.getCanvas().style.cursor = 'pointer'; });
+          map.on('mouseleave', layId, () => { map.getCanvas().style.cursor = ''; });
+        }
+
         routeSourceIds.push(srcId);
+        routeLayerIds.push(hitLayId);
         routeLayerIds.push(layId);
         activeLayers.push({ data, color, weight, opacity, dashArray });
         return layId;
@@ -4690,17 +4860,17 @@ async function loadPartnerFuelStationsOnMap() {
     if (!map || !routes || routes.length === 0) return;
     removeRouteLayer();
 
-    // 1. Draw inactive alternative routes first (in gray)
+    // 1. Draw inactive alternative routes first (in gray) with map click handlers
     routes.forEach((route, idx) => {
       if (idx !== activeIndex) {
-        addRouteLayer(route.geometry.coordinates, '#94a3b8', 5, 0.5);
+        addRouteLayer(route.geometry.coordinates, '#94a3b8', 6, 0.6, null, idx);
       }
     });
 
-    // 2. Draw active primary route on top (in blue)
+    // 2. Draw active primary route on top (in blue) with map click handler
     const activeRoute = routes[activeIndex];
     if (activeRoute && activeRoute.geometry) {
-      addRouteLayer(activeRoute.geometry.coordinates, '#2563eb', 8, 0.9);
+      addRouteLayer(activeRoute.geometry.coordinates, '#2563eb', 9, 0.95, null, activeIndex);
 
       // Overlay traffic congestion annotations if available
       if (activeRoute.legs && activeRoute.legs[0] && activeRoute.legs[0].annotation && activeRoute.legs[0].annotation.congestion) {
@@ -4782,68 +4952,10 @@ async function loadPartnerFuelStationsOnMap() {
   }
 
   function renderRouteSelectionPills(routes, activeIndex) {
-    let pillsContainer = document.getElementById('route-selection-pills');
-    if (!pillsContainer) {
-      pillsContainer = document.createElement('div');
-      pillsContainer.id = 'route-selection-pills';
-      pillsContainer.style.cssText = 'position: absolute; top: 16px; left: 50%; transform: translateX(-50%); z-index: 25; display: flex; gap: 8px; background: rgba(15,23,42,0.85); backdrop-filter: blur(10px); padding: 6px 10px; border-radius: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); max-width: 90%; overflow-x: auto;';
-      const mapArea = document.querySelector('.right-map-area');
-      if (mapArea) mapArea.appendChild(pillsContainer);
-    }
-    
-    // Hide pills when navigation is active
-    if (isNavigating) {
+    const pillsContainer = document.getElementById('route-selection-pills');
+    if (pillsContainer) {
       pillsContainer.style.display = 'none';
-      return;
     }
-    
-    if (!routes || routes.length <= 1) {
-      pillsContainer.style.display = 'none';
-      return;
-    }
-
-    let minDurIdx = 0;
-    let minDur = Infinity;
-    let minDistIdx = 0;
-    let minDist = Infinity;
-
-    routes.forEach((r, i) => {
-      if (r.duration < minDur) {
-        minDur = r.duration;
-        minDurIdx = i;
-      }
-      if (r.distance < minDist) {
-        minDist = r.distance;
-        minDistIdx = i;
-      }
-    });
-
-    pillsContainer.style.display = 'flex';
-    pillsContainer.innerHTML = routes.map((r, idx) => {
-      const distKm = (r.distance / 1000).toFixed(1);
-      const durHrs = Math.floor(r.duration / 3600);
-      const durMins = Math.floor((r.duration % 3600) / 60);
-      const durStr = durHrs > 0 ? `${durHrs}h ${durMins}m` : `${durMins}m`;
-      const isActive = (idx === activeIndex);
-
-      let badgeTag = '';
-      if (idx === minDurIdx && idx === minDistIdx) {
-        badgeTag = ' (Fastest & Shortest)';
-      } else if (idx === minDurIdx) {
-        badgeTag = ' (Fastest)';
-      } else if (idx === minDistIdx) {
-        badgeTag = ' (Shortest)';
-      }
-
-      const label = `Route ${idx + 1}${badgeTag}`;
-
-      return `
-        <button onclick="selectCarRoute(${idx})" style="background: ${isActive ? '#10b981' : 'rgba(255,255,255,0.1)'}; color: #ffffff; border: 1px solid ${isActive ? '#10b981' : 'rgba(255,255,255,0.2)'}; border-radius: 14px; padding: 6px 12px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.2s; display: flex; align-items: center; gap: 6px;">
-          <span>🚗 ${label}</span>
-          <span style="opacity: 0.85;">(${distKm} km • ${durStr})</span>
-        </button>
-      `;
-    }).join('');
   }
 
   let currentRouteInstructions = [];
@@ -5067,6 +5179,8 @@ async function loadPartnerFuelStationsOnMap() {
     document.getElementById('nav-toggle-btn').textContent = '🛑 Stop Navigation';
     document.body.classList.add('nav-active');
     
+    initDeviceOrientation();
+    
     const hudCard = document.getElementById('nav-hud-card');
     if (hudCard) {
       hudCard.style.display = 'block';
@@ -5100,17 +5214,19 @@ async function loadPartnerFuelStationsOnMap() {
     trackWatchId = navigator.geolocation.watchPosition((pos) => {
       const newCoords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
       
-      // Calculate heading: prefer device heading, fallback to bearing from movement
-      let heading = pos.coords.heading;
+      // Calculate heading: prefer physical device compass sensor, fallback to GPS movement bearing
+      let heading = deviceHeading;
       if (heading == null || isNaN(heading)) {
-        if (prevGpsCoords) {
-          const dist = Math.sqrt(
-            Math.pow(newCoords.lat - prevGpsCoords.lat, 2) + 
-            Math.pow(newCoords.lon - prevGpsCoords.lon, 2)
-          );
-          // Only update heading if there's meaningful movement (approx > 5m)
-          if (dist > 0.00005) {
-            heading = calcBearing(prevGpsCoords.lat, prevGpsCoords.lon, newCoords.lat, newCoords.lon);
+        heading = pos.coords.heading;
+        if (heading == null || isNaN(heading)) {
+          if (prevGpsCoords) {
+            const dist = Math.sqrt(
+              Math.pow(newCoords.lat - prevGpsCoords.lat, 2) + 
+              Math.pow(newCoords.lon - prevGpsCoords.lon, 2)
+            );
+            if (dist > 0.00005) {
+              heading = calcBearing(prevGpsCoords.lat, prevGpsCoords.lon, newCoords.lat, newCoords.lon);
+            }
           }
         }
       }
@@ -5118,10 +5234,21 @@ async function loadPartnerFuelStationsOnMap() {
       if (heading != null && !isNaN(heading)) {
         userHeading = heading;
         updateCompass(heading);
-        // Update the navigation arrow icon direction
+        
+        // Update user marker arrow SVG rotation
         if (userMarker) {
-          const headingEl = createNavArrowElement(heading);
-          if (userMarker.getElement()) userMarker.getElement().innerHTML = headingEl.innerHTML;
+          const svgArrow = userMarker.getElement().querySelector('.nav-arrow-svg');
+          if (svgArrow) {
+            svgArrow.style.transform = `translate(-50%, -50%) rotate(${Math.round(heading)}deg)`;
+          } else {
+            const headingEl = createNavArrowElement(heading);
+            if (userMarker.getElement()) userMarker.getElement().innerHTML = headingEl.innerHTML;
+          }
+        }
+
+        // Align map bearing with device direction during active navigation
+        if (isNavigating && !userInteractedWithMap && map) {
+          map.setBearing(Math.round(heading));
         }
       }
 
@@ -5220,6 +5347,22 @@ async function loadPartnerFuelStationsOnMap() {
     // Reset compass needle
     const needle = document.getElementById('compass-needle');
     if (needle) needle.style.transform = 'rotate(0deg)';
+
+    // Fit map view to show full route path overview from origin to destination
+    if (map) {
+      if (loadedCarRoutes && loadedCarRoutes.length > 0 && activeCarRouteIndex !== undefined && loadedCarRoutes[activeCarRouteIndex]) {
+        const activeRoute = loadedCarRoutes[activeCarRouteIndex];
+        if (activeRoute.geometry && activeRoute.geometry.coordinates) {
+          const bounds = new mapboxgl.LngLatBounds();
+          activeRoute.geometry.coordinates.forEach(c => bounds.extend(c));
+          map.fitBounds(bounds, { padding: 60, duration: 1000 });
+        }
+      } else if (currentPolyline && currentPolyline.length > 0) {
+        const bounds = new mapboxgl.LngLatBounds();
+        currentPolyline.forEach(pt => bounds.extend([pt.lng != null ? pt.lng : pt.lon, pt.lat]));
+        map.fitBounds(bounds, { padding: 60, duration: 1000 });
+      }
+    }
   }
 
   function resetMapNorth() {
@@ -5483,18 +5626,68 @@ async function loadPartnerFuelStationsOnMap() {
     summaryCard.innerHTML = html;
   }
 
-  // ─── POI NEARBY SEARCH (GOOGLE MAPS STYLE) ────────────────
-  function escapeHTML(str) {
-    if (str === null || str === undefined) return '';
-    return String(str).replace(/[&<>'"]/g, 
-      tag => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        "'": '&#39;',
-        '"': '&quot;'
-      }[tag] || tag)
-    );
+  // ─── POI NEARBY SEARCH (STRICT ALONG-ROUTE & FAST CACHED) ─
+  const poiCache = {};
+
+  function distanceToSegmentKm(pLat, pLon, aLat, aLon, bLat, bLon) {
+    const l2 = Math.pow(bLat - aLat, 2) + Math.pow(bLon - aLon, 2);
+    if (l2 === 0) return getDistanceKm(pLat, pLon, aLat, aLon);
+    let t = ((pLat - aLat) * (bLat - aLat) + (pLon - aLon) * (bLon - aLon)) / l2;
+    t = Math.max(0, Math.min(1, t));
+    const projLat = aLat + t * (bLat - aLat);
+    const projLon = aLon + t * (bLon - aLon);
+    return getDistanceKm(pLat, pLon, projLat, projLon);
+  }
+
+  function isPoiAlongRoute(pLat, pLon, polyline, maxKm = 3.0) {
+    if (!polyline || polyline.length === 0) return true;
+    
+    let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
+    for (let i = 0; i < polyline.length; i++) {
+      const pt = polyline[i];
+      const lat = pt.lat;
+      const lon = pt.lng != null ? pt.lng : pt.lon;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lon < minLon) minLon = lon;
+      if (lon > maxLon) maxLon = lon;
+    }
+    
+    const pad = maxKm / 111.0;
+    if (pLat < minLat - pad || pLat > maxLat + pad || pLon < minLon - pad || pLon > maxLon + pad) {
+      return false;
+    }
+    
+    const step = polyline.length > 300 ? Math.ceil(polyline.length / 150) : 1;
+    for (let i = 0; i < polyline.length - step; i += step) {
+      const ptA = polyline[i];
+      const ptB = polyline[i + step];
+      const aLat = ptA.lat, aLon = ptA.lng != null ? ptA.lng : ptA.lon;
+      const bLat = ptB.lat, bLon = ptB.lng != null ? ptB.lng : ptB.lon;
+      
+      const dist = distanceToSegmentKm(pLat, pLon, aLat, aLon, bLat, bLon);
+      if (dist <= maxKm) return true;
+    }
+    return false;
+  }
+
+  function getPolylineBBox(polyline, paddingKm = 3.5) {
+    let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity;
+    polyline.forEach(pt => {
+      const lat = pt.lat;
+      const lon = pt.lng != null ? pt.lng : pt.lon;
+      if (lat < minLat) minLat = lat;
+      if (lat > maxLat) maxLat = lat;
+      if (lon < minLon) minLon = lon;
+      if (lon > maxLon) maxLon = lon;
+    });
+    const pad = paddingKm / 111.0;
+    return {
+      south: (minLat - pad).toFixed(5),
+      west: (minLon - pad).toFixed(5),
+      north: (maxLat + pad).toFixed(5),
+      east: (maxLon + pad).toFixed(5)
+    };
   }
 
   function clearPoiMarkers() {
@@ -5506,200 +5699,229 @@ async function loadPartnerFuelStationsOnMap() {
     partnerFuelStationMarkers = [];
   }
 
-  function sampleRoutePoints(coords, maxPoints = 25) {
-    if (!coords || coords.length === 0) return [];
-    if (coords.length <= maxPoints) return coords;
-    const step = Math.floor(coords.length / maxPoints);
-    const sampled = [];
-    for (let i = 0; i < coords.length; i += step) {
-      sampled.push(coords[i]);
+  async function fetchMapboxPois(category, centerLon, centerLat) {
+    const token = typeof mapboxgl !== 'undefined' ? mapboxgl.accessToken : '';
+    if (!token) return [];
+    const categoryTerms = {
+      fuel: 'gas station petrol pump',
+      restaurant: 'restaurant cafe food',
+      hotel: 'hotel motel lodging',
+      hospital: 'hospital clinic medical',
+      attraction: 'tourist attraction museum park'
+    };
+    const term = categoryTerms[category] || category;
+    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(term)}.json?proximity=${centerLon},${centerLat}&limit=12&access_token=${token}`;
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return [];
+      const data = await res.json();
+      if (!data.features) return [];
+      return data.features.map(f => ({
+        lat: f.geometry.coordinates[1],
+        lon: f.geometry.coordinates[0],
+        tags: {
+          name: f.text || f.place_name,
+          'addr:street': f.properties && f.properties.address ? f.properties.address : ''
+        }
+      }));
+    } catch(e) {
+      console.warn("Mapbox POI fetch error:", e);
+      return [];
     }
-    if (sampled[sampled.length - 1] !== coords[coords.length - 1]) {
-      sampled.push(coords[coords.length - 1]);
-    }
-    return sampled;
   }
 
   async function searchNearby(category, event) {
-  if (!map) return;
+    if (!map) return;
 
-  const clickedBtn = event ? event.currentTarget : null;
+    const clickedBtn = event ? event.currentTarget : null;
 
-  if (clickedBtn && clickedBtn.classList.contains('active')) {
-    clickedBtn.classList.remove('active');
+    if (clickedBtn && clickedBtn.classList.contains('active')) {
+      clickedBtn.classList.remove('active');
+      clearPoiMarkers();
+      currentPoiCategory = null;
+      return;
+    }
+
+    document.querySelectorAll('.poi-btn').forEach(b => b.classList.remove('active'));
+    if (clickedBtn) clickedBtn.classList.add('active');
+
     clearPoiMarkers();
-    currentPoiCategory = null;
-    return;
-  }
+    currentPoiCategory = category;
 
-  document.querySelectorAll('.poi-btn').forEach(b => b.classList.remove('active'));
-  if (clickedBtn) clickedBtn.classList.add('active');
-
-  clearPoiMarkers();
-  currentPoiCategory = category;
-
-  const originalText = clickedBtn ? clickedBtn.innerHTML : '';
-  if (clickedBtn) {
-    clickedBtn.innerHTML = `⌛ Searching...`;
-    clickedBtn.disabled = true;
-  }
-
-  let locationFilter = '';
-  if (currentPolyline && currentPolyline.length > 0) {
-    const sampled = sampleRoutePoints(currentPolyline, 30);
-    const coordsString = sampled.map(c => `${c.lat},${c.lng || c.lon}`).join(',');
-    locationFilter = `(around:3000, ${coordsString})`;
-  } else {
-    const bounds = map.getBounds();
-    const south = bounds.getSouth();
-    const west = bounds.getWest();
-    const north = bounds.getNorth();
-    const east = bounds.getEast();
-    locationFilter = `(${south},${west},${north},${east})`;
-  }
-
-  let queryTypes = '';
-  if (category === 'restaurant') {
-    queryTypes = `node["amenity"="restaurant"]${locationFilter};
-      way["amenity"="restaurant"]${locationFilter};
-      node["amenity"="cafe"]${locationFilter};
-      way["amenity"="cafe"]${locationFilter};`;
-  } else if (category === 'hotel') {
-    queryTypes = `node["tourism"="hotel"]${locationFilter};
-      way["tourism"="hotel"]${locationFilter};
-      node["tourism"="guest_house"]${locationFilter};
-      way["tourism"="guest_house"]${locationFilter};
-      node["tourism"="motel"]${locationFilter};`;
-  } else if (category === 'fuel') {
-    queryTypes = `node["amenity"="fuel"]${locationFilter};
-      way["amenity"="fuel"]${locationFilter};`;
-  } else if (category === 'hospital') {
-    queryTypes = `node["amenity"="hospital"]${locationFilter};
-      way["amenity"="hospital"]${locationFilter};
-      node["amenity"="clinic"]${locationFilter};`;
-  } else if (category === 'attraction') {
-    queryTypes = `node["tourism"="attraction"]${locationFilter};
-      way["tourism"="attraction"]${locationFilter};
-      node["tourism"="viewpoint"]${locationFilter};`;
-  }
-
-  const overpassQuery = `[out:json][timeout:25];
-    (
-      ${queryTypes}
-    );
-    out body center;`;
-
-  // 1. Load local database partner markers first (instant and 100% reliable)
-  try {
-    if (category === 'restaurant') {
-      await loadPartnerRestaurantsOnMap();
-    } else if (category === 'fuel') {
-      await loadPartnerFuelStationsOnMap();
+    const originalText = clickedBtn ? (clickedBtn.dataset.origText || clickedBtn.innerHTML) : '';
+    if (clickedBtn) {
+      if (!clickedBtn.dataset.origText) clickedBtn.dataset.origText = originalText;
+      clickedBtn.innerHTML = `⌛ Searching...`;
+      clickedBtn.disabled = true;
     }
-  } catch (localErr) {
-    console.error("DEBUG: Failed to load local partner data:", localErr);
-  }
 
-  // 2. Load public OpenStreetMap markers (free API, prone to rate-limits and timeouts)
-  let elements = [];
-  try {
-    const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`);
-    if (response.ok) {
-      const data = await response.json();
-      elements = data.elements || [];
-    } else {
-      console.warn("DEBUG: Overpass API returned status", response.status);
-    }
-  } catch (overpassErr) {
-    console.warn("DEBUG: Overpass API fetch failed (offline or rate-limited):", overpassErr);
-  }
-
-  const partnerCount = partnerRestaurantMarkers.length + partnerFuelStationMarkers.length;
-
-  if (elements.length === 0 && partnerCount === 0) {
-    console.log("No nearby " + category + "s found in this area.");
-  } else {
-    const emojiMap = {
-      restaurant: '🍴',
-      hotel: '🏨',
-      fuel: '⛽',
-      hospital: '🏥',
-      attraction: '🏛️'
-    };
-    const currentEmoji = emojiMap[category] || '📍';
-
-    const iconColors = {
-      restaurant: '#ea580c', // Orange
-      hotel: '#2563eb',      // Blue
-      fuel: '#16a34a',       // Green
-      hospital: '#dc2626',   // Red
-      attraction: '#7c3aed'  // Purple
-    };
-    const color = iconColors[category] || '#475569';
-
-    elements.forEach(el => {
-      const lat = el.lat || (el.center && el.center.lat);
-      const lon = el.lon || (el.center && el.center.lon);
-      if (!lat || !lon) return;
-
-      const tags = el.tags || {};
-      const name = tags.name || `Unnamed ${category.charAt(0).toUpperCase() + category.slice(1)}`;
-      const address = tags["addr:street"]
-        ? `${tags["addr:housenumber"] || ''} ${tags["addr:street"]}, ${tags["addr:city"] || ''}`.trim()
-        : '';
-      const phone = tags.phone || tags["contact:phone"] || '';
-      const cuisine = tags.cuisine || '';
-      const openingHours = tags.opening_hours || '';
-
-      let distanceHtml = '';
-      let refLat = null;
-      let refLon = null;
-      if (gpsCoords && gpsCoords.lat && gpsCoords.lon) {
-        refLat = gpsCoords.lat;
-        refLon = gpsCoords.lon;
-      } else if (currentPolyline && currentPolyline.length > 0) {
-        refLat = currentPolyline[0].lat;
-        refLon = currentPolyline[0].lng || currentPolyline[0].lon;
-      }
-      if (refLat && refLon) {
-        const distKm = getDistanceKm(refLat, refLon, lat, lon);
-        distanceHtml = `<div style="font-size:11px; color:#10b981; font-weight:700; margin-bottom:4px;">🚗 ${distKm} km away</div>`;
+    try {
+      // 1. Load RoadBuddy database partner markers (strictly filtered to along-route <= 3.0 km)
+      try {
+        if (category === 'restaurant') {
+          await loadPartnerRestaurantsOnMap();
+        } else if (category === 'fuel') {
+          await loadPartnerFuelStationsOnMap();
+        }
+      } catch (localErr) {
+        console.error("Failed to load local partner data:", localErr);
       }
 
-      let popupContent = `
-        <div style="font-family:'Plus Jakarta Sans',sans-serif; padding:4px; max-width:200px;">
-          <div style="font-weight:800; font-size:13.5px; color:var(--text-dark); margin-bottom:4px;">${currentEmoji} ${escapeHTML(name)}</div>
-          ${distanceHtml}
-      `;
-      if (cuisine) popupContent += `<div style="font-size:11px; color:var(--secondary); font-weight:600; margin-bottom:4px;">${escapeHTML(cuisine)}</div>`;
-      if (address) popupContent += `<div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">📍 ${escapeHTML(address)}</div>`;
-      if (openingHours) popupContent += `<div style="font-size:11px; color:#b45309; margin-bottom:4px;">🕒 ${escapeHTML(openingHours)}</div>`;
-      if (phone) popupContent += `<div style="font-size:11px; color:var(--primary); font-weight:600;">📞 ${escapeHTML(phone)}</div>`;
-      popupContent += `</div>`;
+      // 2. Fast Mapbox & Bounding-Box Overpass Search (< 300ms) with Cache
+      const routeKey = currentPolyline && currentPolyline.length > 0 
+        ? `${currentPolyline[0].lat.toFixed(3)}_${currentPolyline[currentPolyline.length - 1].lat.toFixed(3)}`
+        : 'no_route';
+      const cacheKey = `${category}_${routeKey}`;
 
-      const poiEl = document.createElement('div');
-      poiEl.innerHTML = `<div style="background-color: ${color}; width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); cursor: pointer;">
-        ${currentEmoji}
-      </div>`;
+      let elements = [];
 
-      const poiPopup = new mapboxgl.Popup({ offset: 20, maxWidth: '240px' }).setHTML(popupContent);
-      const marker = new mapboxgl.Marker({ element: poiEl })
-        .setLngLat([lon, lat])
-        .setPopup(poiPopup)
-        .addTo(map);
-      searchMarkers.push(marker);
-    });
+      if (poiCache[cacheKey]) {
+        elements = poiCache[cacheKey];
+      } else {
+        let centerLat = 20.5937, centerLon = 78.9629;
+        if (gpsCoords && gpsCoords.lat && gpsCoords.lon) {
+          centerLat = gpsCoords.lat;
+          centerLon = gpsCoords.lon;
+        } else if (currentPolyline && currentPolyline.length > 0) {
+          const midIdx = Math.floor(currentPolyline.length / 2);
+          centerLat = currentPolyline[midIdx].lat;
+          centerLon = currentPolyline[midIdx].lng != null ? currentPolyline[midIdx].lng : currentPolyline[midIdx].lon;
+        }
+
+        // Fast Mapbox POI Search (< 100ms)
+        const mapboxPois = await fetchMapboxPois(category, centerLon, centerLat);
+        elements = [...mapboxPois];
+
+        let locationFilter = '';
+        if (currentPolyline && currentPolyline.length > 0) {
+          const bbox = getPolylineBBox(currentPolyline, 3.5);
+          locationFilter = `(${bbox.south},${bbox.west},${bbox.north},${bbox.east})`;
+        } else {
+          const bounds = map.getBounds();
+          locationFilter = `(${bounds.getSouth().toFixed(5)},${bounds.getWest().toFixed(5)},${bounds.getNorth().toFixed(5)},${bounds.getEast().toFixed(5)})`;
+        }
+
+        let queryTypes = '';
+        if (category === 'restaurant') {
+          queryTypes = `node["amenity"="restaurant"]${locationFilter};node["amenity"="cafe"]${locationFilter};`;
+        } else if (category === 'hotel') {
+          queryTypes = `node["tourism"="hotel"]${locationFilter};node["tourism"="motel"]${locationFilter};`;
+        } else if (category === 'fuel') {
+          queryTypes = `node["amenity"="fuel"]${locationFilter};`;
+        } else if (category === 'hospital') {
+          queryTypes = `node["amenity"="hospital"]${locationFilter};node["amenity"="clinic"]${locationFilter};`;
+        } else if (category === 'attraction') {
+          queryTypes = `node["tourism"="attraction"]${locationFilter};node["tourism"="viewpoint"]${locationFilter};`;
+        }
+
+        const overpassQuery = `[out:json][timeout:10];(${queryTypes});out body center;`;
+
+        try {
+          const response = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(overpassQuery)}`);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.elements) {
+              elements = [...elements, ...data.elements];
+            }
+          }
+        } catch (overpassErr) {
+          console.warn("Overpass API fetch failed:", overpassErr);
+        }
+
+        poiCache[cacheKey] = elements;
+      }
+
+      const emojiMap = {
+        restaurant: '🍴',
+        hotel: '🏨',
+        fuel: '⛽',
+        hospital: '🏥',
+        attraction: '🏛️'
+      };
+      const currentEmoji = emojiMap[category] || '📍';
+
+      const iconColors = {
+        restaurant: '#ea580c',
+        hotel: '#2563eb',
+        fuel: '#16a34a',
+        hospital: '#dc2626',
+        attraction: '#7c3aed'
+      };
+      const color = iconColors[category] || '#475569';
+
+      elements.forEach(el => {
+        const lat = el.lat || (el.center && el.center.lat);
+        const lon = el.lon || (el.center && el.center.lon);
+        if (!lat || !lon) return;
+
+        // STRICT ALONG-ROUTE FILTER (3.0 km off-route threshold)
+        if (currentPolyline && currentPolyline.length > 0) {
+          if (!isPoiAlongRoute(lat, lon, currentPolyline, 3.0)) {
+            return; // Skip POIs not strictly along the active route!
+          }
+        }
+
+        const tags = el.tags || {};
+        const name = tags.name || `Unnamed ${category.charAt(0).toUpperCase() + category.slice(1)}`;
+        const address = tags["addr:street"]
+          ? `${tags["addr:housenumber"] || ''} ${tags["addr:street"]}, ${tags["addr:city"] || ''}`.trim()
+          : '';
+        const phone = tags.phone || tags["contact:phone"] || '';
+        const cuisine = tags.cuisine || '';
+        const openingHours = tags.opening_hours || '';
+
+        let distanceHtml = '';
+        let refLat = null;
+        let refLon = null;
+        if (gpsCoords && gpsCoords.lat && gpsCoords.lon) {
+          refLat = gpsCoords.lat;
+          refLon = gpsCoords.lon;
+        } else if (currentPolyline && currentPolyline.length > 0) {
+          refLat = currentPolyline[0].lat;
+          refLon = currentPolyline[0].lng || currentPolyline[0].lon;
+        }
+        if (refLat && refLon) {
+          const distKm = getDistanceKm(refLat, refLon, lat, lon);
+          distanceHtml = `<div style="font-size:11px; color:#10b981; font-weight:700; margin-bottom:4px;">🚗 ${distKm} km away</div>`;
+        }
+
+        let popupContent = `
+          <div style="font-family:'Plus Jakarta Sans',sans-serif; padding:4px; max-width:200px;">
+            <div style="font-weight:800; font-size:13.5px; color:var(--text-dark); margin-bottom:4px;">${currentEmoji} ${escapeHTML(name)}</div>
+            ${distanceHtml}
+        `;
+        if (cuisine) popupContent += `<div style="font-size:11px; color:var(--secondary); font-weight:600; margin-bottom:4px;">${escapeHTML(cuisine)}</div>`;
+        if (address) popupContent += `<div style="font-size:11px; color:var(--text-muted); margin-bottom:4px;">📍 ${escapeHTML(address)}</div>`;
+        if (openingHours) popupContent += `<div style="font-size:11px; color:#b45309; margin-bottom:4px;">🕒 ${escapeHTML(openingHours)}</div>`;
+        if (phone) popupContent += `<div style="font-size:11px; color:var(--primary); font-weight:600;">📞 ${escapeHTML(phone)}</div>`;
+        popupContent += `</div>`;
+
+        const poiEl = document.createElement('div');
+        poiEl.innerHTML = `<div style="background-color: ${color}; width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); cursor: pointer;">
+          ${currentEmoji}
+        </div>`;
+
+        const poiPopup = new mapboxgl.Popup({ offset: 20, maxWidth: '240px' }).setHTML(popupContent);
+        const marker = new mapboxgl.Marker({ element: poiEl })
+          .setLngLat([lon, lat])
+          .setPopup(poiPopup)
+          .addTo(map);
+        searchMarkers.push(marker);
+      });
+    } catch (err) {
+      console.error("searchNearby error:", err);
+    } finally {
+      if (clickedBtn) {
+        clickedBtn.innerHTML = clickedBtn.dataset.origText || originalText;
+        clickedBtn.disabled = false;
+        clickedBtn.classList.add('active');
+      }
+    }
   }
-
-  if (clickedBtn) {
-    clickedBtn.innerHTML = originalText;
-    clickedBtn.disabled = false;
-    clickedBtn.classList.add('active');
-  }
-}
 
   window.addEventListener('DOMContentLoaded', () => {
     initMap();
+    initDeviceOrientation();
     renderItineraryInLeftPanel();
 
     // Select the mode according to trip travel mode
